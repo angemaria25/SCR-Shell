@@ -31,22 +31,36 @@ def ejecutar_comando(comando):
         return
     
     if "|" in comando:
-        comandos = [cmd.strip() for cmd in comando.split("|")]
+        partes_del_comando = comando.split("|")
+        comandos = []
+        for cmd in partes_del_comando:
+            cmd_limpio = cmd.strip()
+            comandos.append(cmd_limpio)
+
         procesos = []
         
-        for i, cmd in enumerate(comandos):
-            stdin = None if i == 0 else procesos[i-1].stdout
-            stdout = subprocess.PIPE if i < len(comandos)-1 else None
+        for i in range(len(comandos)):
+            cmd_actual = comandos[i].split()
+            if i == 0:
+                stdin = None #el primer comando no recibe entrada de otro.
+            else:
+                stdin = procesos[i-1].stdout #uso la salida del comando anterior.
+                
+            if i == len(comandos) - 1:
+                stdout = None 
+            else:
+                stdout = subprocess.PIPE
             
             proceso = subprocess.run(
-                cmd.split(),
+                cmd_actual,
                 stdin=stdin,
                 stdout=stdout,
                 stderr=subprocess.PIPE,
                 text=True
             )
             procesos.append(proceso)
-            
+        
+        #mostrar salida del último comando.
         if procesos[-1].returncode == 0:
             print(procesos[1].stdout or "", end="")
         else:
