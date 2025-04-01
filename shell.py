@@ -5,7 +5,7 @@ def main():
     while True:
         try:
             comando = input("$ ")
-            if comando.lower = "exit":
+            if comando.lower == "exit":
                 break
             
             ejecutar_comando(comando)
