@@ -14,17 +14,30 @@ def main():
             print("\nSaliendo del shell...")
             break
         
-def ejecutar_comando():
+def ejecutar_comando(comando):
+    partes = comando.split()
+    
+    id not partes:
+        return
+    
+    if partes[0] == "cd":
+        try:
+            if len(partes) == 1:
+                os.chdir(os.path.expanduser("~"))
+            else:
+                os.chdir(partes[1])
+        except Exception as e:
+            print(f"Error inesperado: {e}")
+        return
+    
     try:
-        # Usamos subprocess.run para capturar la salida del comando
         resultado = subprocess.run(
-            comando.split, # Divide el comando en lista ["ls", "-l"]
-            stdout=subprocess.PIPE,  # Captura la salida estándar
-            stderr=subprocess.PIPE,  # Captura errores
-            text=True  # Para manejar texto (no bytes)
+            partes, 
+            stdout=subprocess.PIPE,  
+            stderr=subprocess.PIPE,  
+            text=True  
         )
         
-        # Imprime la salida (stdout) o errores (stderr)
         if resultado.returncode == 0:
             print(resultado.stdout, end="")
         else:
