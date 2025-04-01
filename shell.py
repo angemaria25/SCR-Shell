@@ -17,7 +17,7 @@ def main():
 def ejecutar_comando(comando):
     partes = comando.split()
     
-    id not partes:
+    if not partes:
         return
     
     if partes[0] == "cd":
