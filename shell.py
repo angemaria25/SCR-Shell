@@ -30,6 +30,30 @@ def ejecutar_comando(comando):
             print(f"Error inesperado: {e}")
         return
     
+    if "|" in comando:
+        comandos = [cmd.strip() for cmd in comando.split("|")]
+        procesos = []
+        
+        for i, cmd in enumerate(comandos):
+            stdin = None if i == 0 else procesos[i-1].stdout
+            stdout = subprocess.PIPE if i < len(comandos)-1 else None
+            
+            proceso = subprocess.run(
+                cmd.split(),
+                stdin=stdin,
+                stdout=stdout,
+                stderr=subprocess.PIPE,
+                text=True
+            )
+            procesos.append(proceso)
+            
+        if procesos[-1].returncode == 0:
+            print(procesos[1].stdout or "", end="")
+        else:
+            print(procesos[-1].stderr or "", end="")
+        return
+        
+    
     redireccion_salida = None
     redireccion_entrada = None
     append = False 
