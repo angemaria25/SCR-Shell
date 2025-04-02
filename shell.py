@@ -1,6 +1,9 @@
 import os 
 import subprocess
 
+def espacio_tokens():
+    pass 
+
 def main():
     while True:
         try:
@@ -13,8 +16,14 @@ def main():
         except KeyboardInterrupt:
             print("\nSaliendo del shell...")
             break
+        except Exception as e:
+            print(f"Error: {e}")
+            
         
 def ejecutar_comando(comando):
+    if not comando:
+        return
+    
     partes = comando.split()
     
     if not partes:
