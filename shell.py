@@ -2,6 +2,8 @@ import os
 import re
 import subprocess
 
+background_jobs = {}
+
 def espacio_tokens(comando):
     comando = re.sub(r"\s*([<>|])\s*", r" \1 ", comando)
     comando = " ".join(comando.split())
@@ -27,6 +29,10 @@ def main():
 def ejecutar_comando(comando):
     if not comando:
         return
+
+    is_background = comando.strip().endswith("&")
+    if is_background:
+        comando = comando[:-1].strip()
     
     partes = comando.split()
     
