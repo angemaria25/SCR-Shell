@@ -2,7 +2,7 @@ import os
 import re
 import subprocess
 
-def espacio_tokens():
+def espacio_tokens(comando):
     comando = re.sub(r"\s*([<>|])\s*", r" \1 ", comando)
     comando = " ".join(comando.split())
     return comando.strip()
@@ -11,6 +11,7 @@ def main():
     while True:
         try:
             comando = input("$ ")
+            comando = espacio_tokens(comando)
             if comando.lower == "exit":
                 break
             
