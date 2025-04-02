@@ -1,8 +1,11 @@
 import os 
+import re
 import subprocess
 
 def espacio_tokens():
-    pass 
+    comando = re.sub(r"\s*([<>|])\s*", r" \1 ", comando)
+    comando = " ".join(comando.split())
+    return comando.strip()
 
 def main():
     while True:
