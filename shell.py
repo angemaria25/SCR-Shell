@@ -72,12 +72,7 @@ def manejar_pipes(comando):
             stdin = None #el primer comando no recibe entrada de otro.
         else:
             stdin = procesos[i-1].stdout #el siguiente comando recibe la salida del comando anterior.
-                
-        #el último comando dirige su salida al stdout, no al pipe.
-        #if i == len(comandos) - 1:
-            #stdout = None 
-        #else:
-            #stdout = subprocess.PIPE
+
         
         # El último comando dirige su salida al stdout, no al pipe.
         stdout = subprocess.PIPE if i < len(comandos) - 1 else None
