@@ -1,2 +1,0 @@
-1 salida.txt
-1

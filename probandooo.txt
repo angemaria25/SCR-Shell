@@ -1,4 +1,0 @@
-archivo.txt
-probandooo.txt
-README.md
-shell.py

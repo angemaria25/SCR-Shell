@@ -1,7 +1,0 @@
-archivo.txt
-ls
-new.txt
-probandooo.txt
-pruebita.py
-README.md
-shell.py

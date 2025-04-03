@@ -1,9 +1,9 @@
 import os 
 import re
 import subprocess
-from collections import OnderedDict
+from collections import OrderedDict
 
-background_jobs = OnderedDict()
+background_jobs = OrderedDict()
 
 def espacio_tokens(comando):
     comando = re.sub(r"\s*([<>|])\s*", r" \1 ", comando)
@@ -15,7 +15,7 @@ def main():
         try:
             comando = input("$ ")
             comando = espacio_tokens(comando)
-            if comando.lower == "exit":
+            if comando == "exit":
                 break
             
             ejecutar_comando(comando)
@@ -27,32 +27,6 @@ def main():
             print(f"Error: {e}")
             
         
-def ejecutar_comando(comando):
-    global background_jobs
-    
-    if not comando:
-        return
-
-    is_background = comando.strip().endswith("&")
-    if is_background:
-        comando = comando[:-1].strip()
-    
-    partes = comando.split()
-    
-    if not partes:
-        return
-    
-    if partes[0] == "cd":
-        ejecutar_cd(partes)
-        return
-    
-    if "|" in comando:
-        manejar_pipes(comando)
-        return
-        
-    comando_base, redireccion_salida, redireccion_entrada, append = parsear_redirecciones(partes)
-    ejecutar_comando_redirecciones(comando_base, redireccion_salida, redireccion_entrada, append)
-    
     
 def ejecutar_cd(partes):
     try:
@@ -60,8 +34,8 @@ def ejecutar_cd(partes):
             os.chdir(os.path.expanduser("~"))
         else:
             os.chdir(partes[1])
-        except Exception as e:
-            print(f"Error inesperado: {e}")
+    except Exception as e:
+        print(f"Error inesperado: {e}")
             
             
         
@@ -103,7 +77,7 @@ def manejar_pipes(comando):
         
     
         
-def parsear_redirreciones(partes):
+def parsear_redirecciones(partes):
     redireccion_salida = None
     redireccion_entrada = None
     append = False 
@@ -173,6 +147,33 @@ def ejecutar_comando_redirecciones(comando_base, redireccion_salida, redireccion
             stdin_file.close()
         if stdout_file:
             stdout_file.close()
+            
+            
+def ejecutar_comando(comando):
+    global background_jobs
+    
+    if not comando:
+        return
+
+    is_background = comando.strip().endswith("&")
+    if is_background:
+        comando = comando[:-1].strip()
+    
+    partes = comando.split()
+    
+    if not partes:
+        return
+    
+    if partes[0] == "cd":
+        ejecutar_cd(partes)
+        return
+    
+    if "|" in comando:
+        manejar_pipes(comando)
+        return
+        
+    comando_base, redireccion_salida, redireccion_entrada, append = parsear_redirecciones(partes)
+    ejecutar_comando_redirecciones(comando_base, redireccion_salida, redireccion_entrada, append)
         
 
         

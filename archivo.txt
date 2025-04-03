@@ -1,5 +1,0 @@
-total 5
--rwxrwx--- 1 root vboxsf    0 Apr  1  2025 archivo.txt
--rwxrwx--- 1 root vboxsf    7 Apr  1 11:05 README.md
--rwxrwx--- 1 root vboxsf 3029 Apr  1 14:05 shell.py
-Buenossss diasssss
