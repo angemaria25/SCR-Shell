@@ -3,7 +3,9 @@ import re
 import subprocess
 from collections import OrderedDict
 
+ultimo_directorio = None
 background_jobs = OrderedDict()
+
 
 def espacio_tokens(comando):
     comando = re.sub(r"\s*([<>|])\s*", r" \1 ", comando)
@@ -29,11 +31,27 @@ def main():
         
     
 def ejecutar_cd(partes):
+    global ultimo_directorio
     try:
-        if len(partes) == 1:
+        directorio_actual = os.getcwd()
+        if len(partes) == 1 or partes[1] == "~":
             os.chdir(os.path.expanduser("~"))
+        elif partes[1] == "..":
+            os.chdir("..")
+        elif partes[1] == "-":
+            if ultimo_directorio:
+                os.chdir(ultimo_directorio)
+                print(f"Volviendo al último directorio: {ultimo_directorio}.")
+            else:
+                print("No hay un directorio anterior al que regresar.")
+        elif partes[1].startswith("~/"):
+            ruta = os.path.expanduser(partes[1])
+            os.chdir(ruta)
         else:
             os.chdir(partes[1])
+        ultimo_directorio = directorio_actual
+    except FileNotFoundError:
+        print(f"Error: No existe el directorio '{partes[1]}'.")
     except Exception as e:
         print(f"Error inesperado: {e}")
             
