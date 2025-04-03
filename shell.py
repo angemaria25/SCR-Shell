@@ -8,7 +8,7 @@ background_jobs = OrderedDict()
 
 
 def espacio_tokens(comando):
-    comando = re.sub(r"\s*([<>|])\s*", r" \1 ", comando)
+    comando = re.sub(r"\s*(>>|[<>|])\s*", r" \1 ", comando)
     comando = " ".join(comando.split())
     return comando.strip()
 
@@ -71,27 +71,38 @@ def manejar_pipes(comando):
         if i == 0:
             stdin = None #el primer comando no recibe entrada de otro.
         else:
-            stdin = procesos[i-1].stdout #uso la salida del comando anterior.
+            stdin = procesos[i-1].stdout #el siguiente comando recibe la salida del comando anterior.
                 
-        if i == len(comandos) - 1:
-            stdout = None 
-        else:
-            stdout = subprocess.PIPE
+        #el último comando dirige su salida al stdout, no al pipe.
+        #if i == len(comandos) - 1:
+            #stdout = None 
+        #else:
+            #stdout = subprocess.PIPE
+        
+        # El último comando dirige su salida al stdout, no al pipe.
+        stdout = subprocess.PIPE if i < len(comandos) - 1 else None
             
-        proceso = subprocess.run(
+        proceso = subprocess.Popen(
             cmd_actual,
             stdin=stdin,
             stdout=stdout,
             stderr=subprocess.PIPE,
             text=True
         )
+        
+        if i > 0:
+            procesos[i-1].stdout.close()
+            
+        
         procesos.append(proceso)
+        
+    salida, error = procesos[-1].communicate()
         
     #mostrar salida del último comando.
     if procesos[-1].returncode == 0:
-        print(procesos[1].stdout or "", end="")
+        print(salida or "", end="")
     else:
-        print(procesos[-1].stderr or "", end="")
+        print(error or "", end="")
         
     
         
@@ -120,6 +131,7 @@ def parsear_redirecciones(partes):
                 comando_base = comando_base[:i]
                 break
         i+=1
+
     
     return comando_base, redireccion_salida, redireccion_entrada, append
         
