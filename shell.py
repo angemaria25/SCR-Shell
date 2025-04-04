@@ -202,6 +202,11 @@ def listar_jobs(mostrar_detalles=False):
         print("No hay procesos en el background.")
         return
     
+    max_job_id = 0
+    for job_id in background_jobs.keys():
+        if job_id > max_job_id:
+            max_job_id = job_id
+    
     for job_id, job_info in background_jobs.items():
         job_en_ejecucion = False
         for proceso in job_info["process"]:
@@ -210,19 +215,27 @@ def listar_jobs(mostrar_detalles=False):
                 break
             
         estado = "Running" if job_en_ejecucion else "Done"
-        print(f"[{job_id}] {estado}\t{job_info['command']}")
+        simbolo = "+" if job_id == max_job_id else "-"
         
-        # Mostrar detalles solo si se usa -l
+        #Quitar & si el proceso terminó
+        comando = job_info["command"]
+        if not job_en_ejecucion:
+            comando = comando.rstrip(" &")
+            
         if mostrar_detalles:
-            contador = 1
-            for proceso in job_info["process"]:
-                if proceso.poll() is None:
-                    estado_proceso = "Running"
-                else:
-                    estado_proceso = f"Exit {proceso.returncode}"
-                print(f"    {contador}. PID {proceso.pid} - {estado_proceso}")
-                contador += 1
-
+            # Formato especial para pipes
+            if len(job_info["process"]) > 1:
+                print(f"[{job_id}]{simbolo} {job_info['process'][0].pid:>6} {estado:<7} {job_info['command'].split('|')[0].strip()}")
+                for i in range(1, len(job_info["process"])):
+                    print(f"    {job_info['process'][i].pid:>6}       {'| ' if i == 1 else '  '}{job_info['command'].split('|')[i].strip()}" + (" &" if job_en_ejecucion and i == len(job_info["process"])-1 else ""))
+            else:
+                # Comandos normales
+                print(f"[{job_id}]{simbolo} {job_info['process'][0].pid:>6} {estado:<7} {job_info['command']}" + (" &" if job_en_ejecucion else ""))
+        else:
+            # Formato compacto
+            print(f"[{job_id}]{simbolo} {estado:<7} {job_info['command']}" + (" &" if job_en_ejecucion else ""))
+        
+        
 def ejecutar_comando(comando):
     global background_jobs, job_id_counter
     
