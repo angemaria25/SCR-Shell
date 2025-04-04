@@ -96,8 +96,8 @@ def manejar_pipes(comando, background=False):
         job_id = job_id_counter
         job_id_counter += 1
         background_jobs[job_id] = {
-            'processes': procesos,
-            'command': comando
+            "process": procesos,
+            "command": comando
         }
         print(f"[{job_id}] {procesos[0].pid}")
         return 
@@ -174,7 +174,7 @@ def ejecutar_comando_redirecciones(comando_base, redireccion_salida, redireccion
             background_jobs[job_id] = {
                 "pid": proceso.pid,
                 "command": " ".join(comando_base),
-                "process": proceso
+                "process": [proceso]
             }
             print(f"[{job_id}] {proceso.pid}")
             job_id_counter += 1
@@ -195,13 +195,33 @@ def ejecutar_comando_redirecciones(comando_base, redireccion_salida, redireccion
         if stdout_file:
             stdout_file.close()
             
+def listar_jobs():
+    global background_jobs
+    
+    if not background_jobs:
+        print("No hay procesos en el background.")
+        return
+    
+    for job_id, job_info in background_jobs.items():
+        job_en_ejecucion = False
+        for proceso in job_info["process"]:
+            if proceso.poll() is None:
+                job_en_ejecucion = True
+                break
             
+        estado = "Running" if job_en_ejecucion else "Done"
+        print(f"[{job_id}] {estado}\t{job_info['command']}")
+        
 def ejecutar_comando(comando):
     global background_jobs, job_id_counter
     
     if not comando:
         return
-
+    
+    if comando.strip() == "jobs":
+        listar_jobs()
+        return
+        
     is_background = comando.strip().endswith("&")
     if is_background:
         comando = comando[:-1].strip()
