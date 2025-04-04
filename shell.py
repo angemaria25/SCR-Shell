@@ -195,7 +195,7 @@ def ejecutar_comando_redirecciones(comando_base, redireccion_salida, redireccion
         if stdout_file:
             stdout_file.close()
             
-def listar_jobs():
+def listar_jobs(mostrar_detalles=False):
     global background_jobs
     
     if not background_jobs:
@@ -212,14 +212,29 @@ def listar_jobs():
         estado = "Running" if job_en_ejecucion else "Done"
         print(f"[{job_id}] {estado}\t{job_info['command']}")
         
+        # Mostrar detalles solo si se usa -l
+        if mostrar_detalles:
+            contador = 1
+            for proceso in job_info["process"]:
+                if proceso.poll() is None:
+                    estado_proceso = "Running"
+                else:
+                    estado_proceso = f"Exit {proceso.returncode}"
+                print(f"    {contador}. PID {proceso.pid} - {estado_proceso}")
+                contador += 1
+
 def ejecutar_comando(comando):
     global background_jobs, job_id_counter
     
     if not comando:
         return
     
-    if comando.strip() == "jobs":
-        listar_jobs()
+    if comando.strip().startswith("jobs"):
+        partes = comando.split()
+        if len(partes) > 1 and partes[1] == "-l":
+            listar_jobs(mostrar_detalles=True)
+        else:
+            listar_jobs()
         return
         
     is_background = comando.strip().endswith("&")
