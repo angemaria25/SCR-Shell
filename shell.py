@@ -5,6 +5,7 @@ from collections import OrderedDict
 
 ultimo_directorio = None
 background_jobs = OrderedDict()
+job_id_counter = 1
 
 
 def espacio_tokens(comando):
@@ -73,7 +74,6 @@ def manejar_pipes(comando):
         else:
             stdin = procesos[i-1].stdout #el siguiente comando recibe la salida del comando anterior.
 
-        
         # El último comando dirige su salida al stdout, no al pipe.
         stdout = subprocess.PIPE if i < len(comandos) - 1 else None
             
@@ -88,7 +88,6 @@ def manejar_pipes(comando):
         if i > 0:
             procesos[i-1].stdout.close()
             
-        
         procesos.append(proceso)
         
     salida, error = procesos[-1].communicate()
@@ -98,8 +97,6 @@ def manejar_pipes(comando):
         print(salida or "", end="")
     else:
         print(error or "", end="")
-        
-    
         
 def parsear_redirecciones(partes):
     redireccion_salida = None
@@ -126,11 +123,12 @@ def parsear_redirecciones(partes):
                 comando_base = comando_base[:i]
                 break
         i+=1
-
     
     return comando_base, redireccion_salida, redireccion_entrada, append
         
-def ejecutar_comando_redirecciones(comando_base, redireccion_salida, redireccion_entrada, append):
+def ejecutar_comando_redirecciones(comando_base, redireccion_salida, redireccion_entrada, append, background=False):
+    global background_jobs, job_id_counter
+    
     stdin_file = None
     if redireccion_entrada:
         try:
@@ -151,7 +149,7 @@ def ejecutar_comando_redirecciones(comando_base, redireccion_salida, redireccion
             return    
     
     try:
-        resultado = subprocess.run(
+        proceso = subprocess.Popen(
             comando_base,
             stdin=stdin_file if redireccion_entrada else None,
             stdout=stdout_file if redireccion_salida else subprocess.PIPE,  
@@ -159,11 +157,23 @@ def ejecutar_comando_redirecciones(comando_base, redireccion_salida, redireccion
             text=True  
         )
         
-        if not redireccion_salida:
-            if resultado.returncode == 0:
-                print(resultado.stdout, end="")
-            else:
-                print(resultado.stderr, end="")
+        if background:
+            job_id = job_id_counter
+            background_jobs[job_id] = {
+                "pid": proceso.pid,
+                "command": " ".join(comando_base),
+                "process": proceso
+            }
+            print(f"[{job_id}] {proceso.pid}")
+            job_id_counter += 1
+        else:
+            salida, error = proceso.communicate()
+            
+            if not redireccion_salida:
+                if proceso.returncode == 0:
+                    print(salida or "", end="")
+                else:
+                    print(error or "", end="")
             
     except Exception as e:
         print(f"Error: {e}")
@@ -175,7 +185,7 @@ def ejecutar_comando_redirecciones(comando_base, redireccion_salida, redireccion
             
             
 def ejecutar_comando(comando):
-    global background_jobs
+    global background_jobs, job_id_counter
     
     if not comando:
         return
@@ -198,9 +208,8 @@ def ejecutar_comando(comando):
         return
         
     comando_base, redireccion_salida, redireccion_entrada, append = parsear_redirecciones(partes)
-    ejecutar_comando_redirecciones(comando_base, redireccion_salida, redireccion_entrada, append)
-        
+    ejecutar_comando_redirecciones(comando_base, redireccion_salida, redireccion_entrada, append, is_background)
 
-        
+
 if __name__ == "__main__":
     main()
