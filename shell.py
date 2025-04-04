@@ -58,7 +58,9 @@ def ejecutar_cd(partes):
             
             
         
-def manejar_pipes(comando):
+def manejar_pipes(comando, background=False):
+    global background_jobs, job_id_counter
+    
     partes_del_comando = comando.split("|")
     comandos = []
     for cmd in partes_del_comando:
@@ -89,6 +91,16 @@ def manejar_pipes(comando):
             procesos[i-1].stdout.close()
             
         procesos.append(proceso)
+    
+    if background:
+        job_id = job_id_counter
+        job_id_counter += 1
+        background_jobs[job_id] = {
+            'processes': procesos,
+            'command': comando
+        }
+        print(f"[{job_id}] {procesos[0].pid}")
+        return 
         
     salida, error = procesos[-1].communicate()
         
@@ -204,7 +216,7 @@ def ejecutar_comando(comando):
         return
     
     if "|" in comando:
-        manejar_pipes(comando)
+        manejar_pipes(comando, is_background)
         return
         
     comando_base, redireccion_salida, redireccion_entrada, append = parsear_redirecciones(partes)
