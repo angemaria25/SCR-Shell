@@ -97,7 +97,8 @@ def manejar_pipes(comando, background=False):
         job_id_counter += 1
         background_jobs[job_id] = {
             "process": procesos,
-            "command": comando
+            "command": comando,
+            "ya mostrado": False
         }
         print(f"[{job_id}] {procesos[-1].pid}")
         return 
@@ -174,7 +175,8 @@ def ejecutar_comando_redirecciones(comando_base, redireccion_salida, redireccion
             background_jobs[job_id] = {
                 "pid": proceso.pid,
                 "command": " ".join(comando_base),
-                "process": [proceso]
+                "process": [proceso],
+                "ya mostrado": False
             }
             print(f"[{job_id}] {proceso.pid}")
             job_id_counter += 1
@@ -197,6 +199,7 @@ def ejecutar_comando_redirecciones(comando_base, redireccion_salida, redireccion
             
 def listar_jobs(mostrar_detalles=False):
     global background_jobs
+    
     limpiar_jobs_terminados()
     
     if not background_jobs:
@@ -246,7 +249,7 @@ def limpiar_jobs_terminados():
     global background_jobs
     jobs_a_eliminar = []
     
-    for job_id, job_info in backgorund_jobs.items():
+    for job_id, job_info in list(background_jobs.items()): #copia temporal para evitar errores.
         todos_terminados = True 
         
         for proceso in job_info["process"]:
@@ -255,7 +258,10 @@ def limpiar_jobs_terminados():
                 break 
             
         if todos_terminados:
-            jobs_a_eliminar.append(job_id)
+            if job_info.get("ya mostrado", False):
+                jobs_a_eliminar.append(job_id)
+            else:
+                job_info["ya mostrado"] = True
             
     for job_id in jobs_a_eliminar:
         del background_jobs[job_id]
