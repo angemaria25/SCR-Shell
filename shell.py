@@ -246,7 +246,7 @@ def listar_jobs(mostrar_detalles=False):
             print(f"[{job_id}]{simbolo} {estado:<7} {job_info['command']}{terminator}")
             
 def limpiar_jobs_terminados():
-    global background_jobs
+    global background_jobs, job_id_counter
     jobs_a_eliminar = []
     
     for job_id, job_info in list(background_jobs.items()): #copia temporal para evitar errores.
@@ -265,6 +265,9 @@ def limpiar_jobs_terminados():
             
     for job_id in jobs_a_eliminar:
         del background_jobs[job_id]
+        
+    if not background_jobs:
+        job_id_counter = 1
         
 def ejecutar_comando(comando):
     global background_jobs, job_id_counter
