@@ -197,6 +197,7 @@ def ejecutar_comando_redirecciones(comando_base, redireccion_salida, redireccion
             
 def listar_jobs(mostrar_detalles=False):
     global background_jobs
+    limpiar_jobs_terminados()
     
     if not background_jobs:
         print("No hay procesos en el background.")
@@ -241,6 +242,23 @@ def listar_jobs(mostrar_detalles=False):
             terminator = " &" if job_en_ejecucion else ""
             print(f"[{job_id}]{simbolo} {estado:<7} {job_info['command']}{terminator}")
             
+def limpiar_jobs_terminados():
+    global background_jobs
+    jobs_a_eliminar = []
+    
+    for job_id, job_info in backgorund_jobs.items():
+        todos_terminados = True 
+        
+        for proceso in job_info["process"]:
+            if proceso.poll() is None:
+                todos_terminados = False
+                break 
+            
+        if todos_terminados:
+            jobs_a_eliminar.append(job_id)
+            
+    for job_id in jobs_a_eliminar:
+        del background_jobs[job_id]
         
 def ejecutar_comando(comando):
     global background_jobs, job_id_counter
