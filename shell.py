@@ -56,8 +56,7 @@ def ejecutar_cd(partes):
     except Exception as e:
         print(f"Error inesperado: {e}")
             
-            
-        
+
 def manejar_pipes(comando, background=False):
     global background_jobs, job_id_counter
     
@@ -68,29 +67,52 @@ def manejar_pipes(comando, background=False):
         comandos.append(cmd_limpio)
 
     procesos = []
+    stdin_previo = None
         
     for i in range(len(comandos)):
-        cmd_actual = comandos[i].split()
-        if i == 0:
-            stdin = None #el primer comando no recibe entrada de otro.
-        else:
-            stdin = procesos[i-1].stdout #el siguiente comando recibe la salida del comando anterior.
-
-        # El último comando dirige su salida al stdout, no al pipe.
-        stdout = subprocess.PIPE if i < len(comandos) - 1 else None
+        partes = comandos[i].split()
+        comando_base, redireccion_salida, redireccion_entrada, append = parsear_redirecciones(partes)
+        
+        if i > 0 and redireccion_entrada:
+            print("Error: La redirección de entrada (<) solo se permite en el primer comando")
+            return
+        if i < len(comandos) - 1 and redireccion_salida:
+            print("Error: La redirección de salida (>, >>) solo se permite en el último comando")
+            return
+        
+        # Configurar stdin
+        stdin_actual = stdin_previo
+        if redireccion_entrada and i == 0:
+            try:
+                stdin_actual = open(redireccion_entrada, 'r')
+            except IOError as e:
+                print(f"Error al abrir {redireccion_entrada}: {e}")
+                return
+            
+        # Configurar stdout
+        stdout_actual = subprocess.PIPE if i < len(comandos)-1 else None
+        if redireccion_salida and i == len(comandos)-1:
+            try:
+                stdout_actual = open(redireccion_salida, 'a' if append else 'w')
+            except IOError as e:
+                print(f"Error al abrir {redireccion_salida}: {e}")
+                if isinstance(stdin_actual, io.TextIOWrapper):
+                    stdin_actual.close()
+                return
             
         proceso = subprocess.Popen(
-            cmd_actual,
-            stdin=stdin,
-            stdout=stdout,
+            comando_base,
+            stdin=stdin_actual,
+            stdout=stdout_actual,
             stderr=subprocess.PIPE,
             text=True
         )
         
+        procesos.append(proceso)
+        stdin_previo = proceso.stdout if i < len(comandos)-1 else None
+        
         if i > 0:
             procesos[i-1].stdout.close()
-            
-        procesos.append(proceso)
     
     if background:
         job_id = job_id_counter
@@ -107,7 +129,8 @@ def manejar_pipes(comando, background=False):
         
     #mostrar salida del último comando.
     if procesos[-1].returncode == 0:
-        print(salida or "", end="")
+        if procesos[-1].stdout == subprocess.PIPE:  # Solo mostrar si no hubo redirección
+            print(salida or "", end="")
     else:
         print(error or "", end="")
         
