@@ -269,6 +269,14 @@ def limpiar_jobs_terminados():
     if not background_jobs:
         job_id_counter = 1
         
+def ejecutar_fg(partes):
+    global background_jobs, job_id_counter
+    
+    if not background_jobs:
+        print("No hay procesos en el background.")
+        return
+
+        
 def ejecutar_comando(comando):
     global background_jobs, job_id_counter
     
@@ -282,7 +290,15 @@ def ejecutar_comando(comando):
         else:
             listar_jobs()
         return
-        
+    
+    if comando.strip().startswith("fg"):
+        partes = comando.split()
+        if len(partes) > 1:
+            ejecutar_fg(partes[1])
+        else:
+            ejecutar_fg(None)
+        return
+    
     is_background = comando.strip().endswith("&")
     if is_background:
         comando = comando[:-1].strip()
