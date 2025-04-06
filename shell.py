@@ -309,12 +309,14 @@ def ejecutar_comando(comando):
     if not comando:
         return
     
-    if comando.strip().startswith("jobs"):
+    if comando == "jobs" or comando.startswith("jobs "):
         partes = comando.split()
-        if len(partes) > 1 and partes[1] == "-l":
+        
+        if len(partes) == 2 and partes[1] == "-l":
             listar_jobs(mostrar_detalles=True)
         else:
-            listar_jobs()
+            if len(partes) == 1:
+                listar_jobs()
         return
     
     if comando.strip().startswith("fg"):
