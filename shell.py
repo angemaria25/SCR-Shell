@@ -296,6 +296,11 @@ def ejecutar_fg(job_arg):
     comando = job_info["command"].rstrip(" &")
     print(f"{comando}")
     
+    del background_jobs[job_id]
+    
+    if not background_jobs:
+        job_id_counter = 1
+    
     try:
         for proceso in job_info["process"]:
             proceso.wait()
@@ -314,9 +319,10 @@ def ejecutar_comando(comando):
         
         if len(partes) == 2 and partes[1] == "-l":
             listar_jobs(mostrar_detalles=True)
+        elif len(partes) == 1:
+            listar_jobs()
         else:
-            if len(partes) == 1:
-                listar_jobs()
+            print(f"jobs: {partes[1]}: opción inválida") 
         return
     
     if comando.strip().startswith("fg"):
