@@ -269,14 +269,40 @@ def limpiar_jobs_terminados():
     if not background_jobs:
         job_id_counter = 1
         
-def ejecutar_fg(partes):
+def ejecutar_fg(job_arg):
     global background_jobs, job_id_counter
     
     if not background_jobs:
         print("No hay procesos en el background.")
         return
-
+    
+    if job_arg is None:
+        job_id = max(background_jobs.keys())
+    else:
+        job_str = job_arg.replace("%", "")
+        try:
+            job_id = int(job_str)
+            if job_id not in background_jobs:
+                print(f"fg: %{job_id}: no existe ese job")
+                return
+        except ValueError:
+            print("fg: el job_id debe ser un número")
+            return
         
+    job_info = background_jobs[job_id]
+    
+    max_job_id = max(background_jobs.keys())
+    simbolo = "+" if job_id == max_job_id else "-"
+    comando = job_info["command"].rstrip(" &")
+    print(f"{comando}")
+    
+    try:
+        for proceso in job_info["process"]:
+            proceso.wait()
+        del background_jobs[job_id]
+    except KeyboardInterrupt:
+        print() 
+            
 def ejecutar_comando(comando):
     global background_jobs, job_id_counter
     
