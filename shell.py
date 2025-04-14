@@ -7,11 +7,33 @@ ultimo_directorio = None
 background_jobs = OrderedDict()
 job_id_counter = 1
 
-
 def espacio_tokens(comando):
     comando = re.sub(r"\s*(>>|[<>|])\s*", r" \1 ", comando)
     comando = " ".join(comando.split())
     return comando.strip()
+
+def split_con_comillas(comando):
+    tokens = []
+    token_actual = ""
+    dentro_comillas_dobles = False
+    dentro_comillas_simples = False
+    
+    for char in comando:
+        if char == '"' and not dentro_comillas_simples:
+            dentro_comillas_dobles = not dentro_comillas_dobles
+        elif char == "'" and not dentro_comillas_dobles:
+            dentro_comillas_simples = not dentro_comillas_simples
+        elif char == " " and not (dentro_comillas_dobles or dentro_comillas_simples):
+            if token_actual:
+                tokens.append(token_actual)
+                token_actual = ""
+        else:
+            token_actual += char
+            
+    if token_actual:
+        tokens.append(token_actual)
+    
+    return tokens
 
 def main():
     while True:
@@ -21,7 +43,10 @@ def main():
             if comando == "exit":
                 break
             
-            ejecutar_comando(comando)
+            tokens = split_con_comillas(comando)  
+            
+            if tokens:
+                ejecutar_comando(tokens)
         
         except KeyboardInterrupt:
             print("\nSaliendo del shell...")
@@ -29,8 +54,6 @@ def main():
         except Exception as e:
             print(f"Error: {e}")
             
-        
-    
 def ejecutar_cd(partes):
     global ultimo_directorio
     try:
@@ -331,49 +354,40 @@ def ejecutar_fg(job_arg):
     except KeyboardInterrupt:
         print() 
             
-def ejecutar_comando(comando):
+def ejecutar_comando(tokens):
     global background_jobs, job_id_counter
     
-    if not comando:
+    if not tokens:
         return
     
-    if comando == "jobs" or comando.startswith("jobs "):
-        partes = comando.split()
-        
-        if len(partes) == 2 and partes[1] == "-l":
+    if tokens[0] == "jobs":
+        if len(tokens) > 1 and tokens[1] == "-l":
             listar_jobs(mostrar_detalles=True)
-        elif len(partes) == 1:
-            listar_jobs()
         else:
-            print(f"jobs: {partes[1]}: opción inválida") 
+            listar_jobs()
         return
     
-    if comando.strip().startswith("fg"):
-        partes = comando.split()
-        if len(partes) > 1:
-            ejecutar_fg(partes[1])
+    if tokens[0] == "fg":
+        if len(tokens) > 1:
+            ejecutar_fg(tokens[1])
         else:
             ejecutar_fg(None)
         return
     
-    is_background = comando.strip().endswith("&")
+    if tokens[0] == "cd":
+        ejecutar_cd(tokens)
+        return
+    
+    is_background = tokens[-1] == "&"
     if is_background:
-        comando = comando[:-1].strip()
+        tokens = tokens[:-1] 
     
-    partes = comando.split()
-    
-    if not partes:
-        return
-    
-    if partes[0] == "cd":
-        ejecutar_cd(partes)
-        return
-    
-    if "|" in comando:
-        manejar_pipes(comando, is_background)
+    comando_str = " ".join(tokens)  
+    if "|" in comando_str:
+        manejar_pipes(comando_str, is_background)
         return
         
-    comando_base, redireccion_salida, redireccion_entrada, append = parsear_redirecciones(partes)
+    comando_base, redireccion_salida, redireccion_entrada, append = parsear_redirecciones(tokens)
     ejecutar_comando_redirecciones(comando_base, redireccion_salida, redireccion_entrada, append, is_background)
 
 
