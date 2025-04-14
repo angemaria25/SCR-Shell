@@ -1,4 +1,4 @@
-## 🐚 Proyecto: Shell de Linux en Python
+## 👩‍💻 Proyecto: Shell de Linux en Python
 
 ### 📌 Descripción General
 Este proyecto implementa un intérprete de comandos (shell) en Python, capaz de ejecutar comandos del sistema, manejar redirecciones de entrada/salida, procesos en background, pipelines, y comandos internos como cd, jobs y fg. Está diseñado para simular el comportamiento de shells como Bash de forma educativa.
