@@ -169,6 +169,23 @@ El shell sigue un diseño modular con componentes claramente separados para el p
         manejar_pipes("cat entrada.txt | grep error > salida.txt", is_background=True)
   ```
 
+`ejecutar_cd(tokens: List[str])`
+
+- **Objetivo**: 
+    - Cambiar el directorio actual del shell al especificado por el usuario, con soporte para rutas relativas, absolutas, directorio home (`~`), directorio padre (`..`), cambio al último directorio (`-`) y rutas relativas al home (`~/ruta`).
+    - Además, mantiene un seguimiento del último directorio visitado mediante la **variable global** `ultimo_directorio`.
+- **Parámetro**: 
+    - `partes (List[str])`: Lista de cadenas que representan los elementos del comando cd.
+        - partes[0] debería ser 'cd'.
+        - partes[1] puede ser una ruta o una bandera especial `(~, .., -, ~/ruta)`.
+- **Variables globales**:
+    - `ultimo_directorio (str)`: Ruta del último directorio visitado, utilizada cuando el usuario quiere volver al anterior con `cd -`.
+- **Proceso**:
+    1. Se guarda el directorio actual con `os.getcwd()` antes de hacer cualquier cambio.
+    2. Se analizan los argumentos para determinar el comportamiento del comando:
+        - **Sin argumentos o con** `~`: se cambia al directorio home del usuario usando `os.path.expanduser("~")`.
+        - 
+    3. 
 
 `manejar_pipes(comando, background=False)`
 

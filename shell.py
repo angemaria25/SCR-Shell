@@ -89,7 +89,6 @@ def manejar_pipes(comando, background=False):
             print("Error: La redirección de salida (>, >>) solo se permite en el último comando")
             return
         
-        # Configurar stdin
         stdin_actual = stdin_previo
         if redireccion_entrada and i == 0:
             try:
@@ -98,7 +97,6 @@ def manejar_pipes(comando, background=False):
                 print(f"Error al abrir {redireccion_entrada}: {e}")
                 return
             
-        # Configurar stdout
         stdout_actual = subprocess.PIPE if i < len(comandos)-1 else None
         if redireccion_salida and i == len(comandos)-1:
             try:
