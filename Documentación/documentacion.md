@@ -19,7 +19,7 @@ El shell sigue un diseño modular con componentes claramente separados para el p
 `espacio_tokens(comando: str) -> str`
 
 - **Objetivo**: Normaliza los espacios alrededor de operadores especiales `(>, <, |, >>)` en un comando de shell para facilitar su posterior tokenización y procesamiento.
-- **Parámetros**: 
+- **Parámetro**: 
     - `comando`: Cadena de texto ingresada por el usuario (ej: `"ls -l>out.txt"`)
 - **Retorna**: Cadena de texto con espacios normalizados alrededor de operadores (ej: `"ls -l > out.txt"`)
 - **Proceso**: 
@@ -54,15 +54,59 @@ El shell sigue un diseño modular con componentes claramente separados para el p
   salida = espacio_tokens(entrada)  # "cat file.txt | grep "error""
   ```
 
+`split_con_comillas(comando: str) -> List[str]`
 
-### Componentes Principales
+- **Objetivo**: Divide una cadena de comando en tokens, respetando los espacios dentro de comillas simples `'` y dobles `"`, mientras separa correctamente los operadores y argumentos. Es fundamental para preservar argumentos que contienen espacios dentro de comillas como una única unidad léxica.
+- **Parámetro**: 
+    - `comando (str)`: Cadena de texto ya normalizada por `espacio_tokens()`. (ej: `"echo 'hola mundo' > salida.txt"`)
+- **Retorna**: Lista de tokens identificados, donde cada token es una palabra o un grupo de palabras entre comillas. (ej: `["echo", "'hola mundo'", ">", "salida.txt"]`)
+- **Proceso**: Esta función utiliza una máquina de estados simple para iterar sobre el comando carácter por carácter. Cambia su comportamiento en función del estado actual:
+    - Estado NORMAL: Agrega los caracteres a un buffer hasta encontrar una comilla o espacio.
+    - Estado ENTRE_COMILLAS: Mantiene los caracteres dentro de una comilla simple o doble como una unidad.
+    - Cuando se encuentra una comilla de cierre, el contenido del buffer se agrega como un único token.
+
+- **Ejemplo**:
+  ```
+  entrada = "echo 'hola mundo' > salida.txt"
+  proceso: 
+  1. Estado inicial: Normal
+  2. 'e','c','h','o' → token_actual = "echo"
+  3. Espacio → guarda "echo", reinicia token_actual
+  4. "'" → entra en comillas simples
+  5. 'h','o','l','a',' ','m','u','n','d','o' → token_actual = "hola mundo"
+  6. "'" → sale de comillas simples
+  7. Espacio → guarda "'hola mundo'", reinicia token_actual
+  8. '>' → token_actual = ">"
+  9. Espacio → guarda ">", reinicia token_actual
+  10. 's','a','l','i','d','a','.','t','x','t' → token_actual = "salida.txt"
+  11. Fin → guarda "salida.txt"
+  # Retorna: ['echo', "'hola mundo'", '>', 'salida.txt']
+  ```
+
+
+### Núcleo del Shell
 
 **main()**
 
-- **Objetivo**: Controla el bucle principal del shell.
+- **Objetivo**: Punto de entrada del programa. Ciclo principal que lee y ejecuta comandos.
+- **Parámetro**:
+- **Retorna**:
 - **Funcionamiento**: 
-    - Muestra el prompt `($ )`
-    - Lee el comando del usuario
+    - Imprime el prompt  `($ )`
+    - Lee la línea de entrada.
     - Procesa el comando con `espacio_tokens()` y `split_con_comillas()`
-    - Determina el tipo de comando y lo ejecuta
+    - Llama a ejecutar_comando(linea).
+- **Ejemplo**:
+  ```
+  Entrada = echo "Prueba técnica" | grep "técnica" > resultado.txt &
+  Proceso:
+  1. espacio_tokens() normaliza a: echo "Prueba técnica" | grep "técnica" > resultado.txt &
+  2. split_con_comillas() produce: ['echo', '"Prueba técnica"', '|', 'grep', '"técnica"', '>', 'resultado.txt', '&']
+  3. ejecutar_comando() detecta pipeline + background:
+  - Crea 2 subprocesos conectados por pipe
+  - Redirige salida final a resultado.txt
+  - Registra job en background_jobs con ID incremental
+  ```
+
+
 
