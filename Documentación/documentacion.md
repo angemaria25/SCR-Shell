@@ -230,3 +230,110 @@ El shell sigue un diseño modular con componentes claramente separados para el p
   ```
 
 `parsear_redirecciones(partes)`
+
+- **Objetivo**: Extrae las redirecciones `<`, `>`, `>>` desde una lista de tokens.
+- **Parámetro**: 
+    - `partes`: Lista de tokens del comando, por (ej: ["cat", "archivo.txt", ">", "salida.txt"]).
+- **Proceso**: 
+- **Retorna**: 
+    - El comando limpio sin redirecciones.
+    - El archivo de entrada (si hay `<`).
+    - El archivo de salida (si hay `>` o `>>`).
+    - Un booleano append para saber si es `>>` (añadir) o `>` (sobrescribir).
+- **Ejemplo1**:
+  ```
+  entrada = ["cat", "archivo.txt", ">", "salida.txt"]
+  Proceso:
+  1. i = 0 → "cat" → nada
+  2. i = 1 → "archivo.txt" → nada
+  3. i = 2 → ">" → detecta redirección de salida
+  4. Guarda:
+        redireccion_salida = "salida.txt"
+        comando_base = ["cat", "archivo.txt"]
+        append = False
+  ```
+- **Ejemplo2**:
+  ```
+  entrada = ["grep", "error", "<", "entrada.txt"]
+  Proceso:
+  1. i = 0 → "grep" → nada
+  2. i = 1 → "error" → nada
+  3. i = 2 → "<" → detecta redirección de entrada
+  4. Guarda:
+        redireccion_entrada = "entrada.txt"
+        comando_base = ["grep", "error"]
+  ```
+- **Ejemplo3**:
+  ```
+  entrada = ["sort", "archivo.txt", ">>", "ordenado.txt"]
+  Proceso:
+  1. i = 0 → "sort" → nada
+  2. i = 1 → "archivo.txt" → nada
+  3. i = 2 → ">>" → redirección de salida en modo append
+  4. Guarda:
+        redireccion_salida = "ordenado.txt"
+        append = True
+        comando_base = ["sort", "archivo.txt"]
+  ```
+            
+`ejecutar_comando_redirecciones(comando_base, redireccion_salida, redireccion_entrada, append, background=False)`
+
+- **Objetivo**: 
+    - Ejecuta un comando individual que ya fue preprocesado para detectar si tiene redirecciones o si se ejecuta en background.
+    - Este comando ya no incluye los tokens `>`, `>>`, `<`, `&`, etc. Es decir, todo eso ya lo extrajo `parsear_redirecciones()` y lo pasó limpio a esta función.
+- **Parámetros**: 
+    - `comando_base	list[str]`:	Comando sin redirecciones (ej. [`"ls", "-l"`])
+    - `redireccion_salida (str o None)`: Nombre del archivo si se redirige salida (`>` o `>>`)
+    - `redireccion_entrada (str o None)`: Nombre del archivo si se redirige entrada (`<`)
+    - `append (bool)`: True si la salida se agrega (`>>`), False si sobrescribe (`>`)
+    - `background (bool)`: True si el proceso debe ejecutarse en segundo plano
+- **Proceso**:
+    1. Verifica si hay archivo de entrada (`redirección de entrada <`):
+        - Si lo hay, abre el archivo en modo lectura ("r") y lo asigna como stdin.
+        - Si ocurre un error al abrirlo (por ejemplo, no existe), se muestra un mensaje y se cancela la ejecución.
+    2. Verifica si hay archivo de salida (`redireccion_salida: > o >>`):
+        - Si lo hay, abre el archivo en modo:
+            - Si es `>`, lo abre en modo de sobreescritura ("w").
+            - Si es `>>`, lo abre en modo de agregar al final del archivo ("a").
+        - Se usa como stdout.
+        - Si ocurre un error al abrirlo, también se cancela la ejecución y se cierran recursos si es necesario.
+    3. Lanza el proceso con `subprocess.Popen()`:
+        - Si hay redirección de entrada, el archivo se pasa como stdin.
+        - Si hay redirección de salida, el archivo se pasa como stdout.
+        - Si no hay redirección de salida, captura stdout internamente para imprimirlo después.
+        - Se ejecuta `comando_base`, que es una lista de strings (ej: `["ls", "-l"]`).
+    4. Comprueba si se ejecuta en background (`&`):
+        - Si el comando se debe ejecutar en segundo plano:
+            - Guarda el proceso en el diccionario de trabajos en segundo plano (background_jobs) con un ID único.
+            - Muestra por pantalla el PID del proceso.
+            - La función finaliza sin esperar a que el proceso termine.
+    5. Si no es background (foreground):
+        - Si el comando se ejecuta en primer plano:
+            - La función espera a que el proceso finalice con `.communicate()`
+            - Si no hubo redirección de salida, muestra la salida estándar en la terminal.
+            - Si hubo errores, también los muestra en pantalla.
+    6. Cierre de archivos:
+        - Una vez terminado todo, se cierran los archivos abiertos para entrada o salida.
+- **Ejemplo de Proceso Completo**:
+  ```
+  1. Input original del usuario: echo hola > saludo.txt &
+  2. Tokenización: → ["echo", "hola", ">", "saludo.txt", "&"]
+  3. Se detecta & → background = True  → Tokens quedan: ["echo", "hola", ">", "saludo.txt"]
+  4. parsear_redirecciones() extrae:
+        - comando_base = ["echo", "hola"]
+        - redireccion_salida = "saludo.txt"
+        - redireccion_entrada = None
+        - append = False
+  5. Se llama a:
+            ejecutar_comando_redirecciones(
+                comando_base=["echo", "hola"],
+                redireccion_salida="saludo.txt",
+                redireccion_entrada=None,
+                append=False,
+                background=True)
+  6. La función:
+        - Abre "saludo.txt" en modo "w".
+        - Ejecuta echo hola redirigiendo la salida al archivo.
+        - Guarda el proceso como job en background.
+        - Muestra: [1] 12345 (por ejemplo)
+  ```
