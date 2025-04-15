@@ -33,26 +33,26 @@ El shell sigue un diseño modular con componentes claramente separados para el p
         - Vuelve a unir con un solo espacio entre elementos.
         - Elimina espacios al inicio/final.
 - **Ejemplo1**:
-        ```
-        entrada = "ls -l>out.txt"
-        proceso: 
-        1. Detecta '>' → añade espacios
-        "ls -l > out.txt"
-        2. Normaliza espacios (ningún cambio)
-        3. Retorna: "ls -l > out.txt"
-        salida = espacio_tokens(entrada)  # "ls -l > out.txt"
-        ```
+  ```
+  entrada = "ls -l>out.txt"
+  proceso: 
+  1. Detecta '>' → añade espacios
+  "ls -l > out.txt"
+  2. Normaliza espacios (ningún cambio)
+  3. Retorna: "ls -l > out.txt"
+  salida = espacio_tokens(entrada)  # "ls -l > out.txt"
+  ```
 
 - **Ejemplo2**:
-        ```
-        entrada = "cat file.txt|grep \"error\""
-        proceso:
-        1. Detecta '|' → añade espacios
-        "cat file.txt | grep "error""
-        2. Normaliza espacios
-        3. Retorna: "cat file.txt | grep "error""
-        salida = espacio_tokens(entrada)  # "cat file.txt | grep "error""
-        ```
+  ```
+  entrada = "cat file.txt|grep \"error\""
+  proceso:
+  1. Detecta '|' → añade espacios
+  "cat file.txt | grep "error""
+  2. Normaliza espacios
+  3. Retorna: "cat file.txt | grep "error""
+  salida = espacio_tokens(entrada)  # "cat file.txt | grep "error""
+  ```
 
 
 ### Componentes Principales
