@@ -197,7 +197,36 @@ El shell sigue un diseño modular con componentes claramente separados para el p
   1. Separación del comando por pipes.
   2. Limpieza de comandos y creación de lista comandos → salida: ["cat entrada.txt", 'grep "error"', "sort > errores.txt"] 
   3. Iteración 1: Primer comando - cat entrada.txt
-        - Se llama a parsear_redirecciones(['cat', 'entrada.txt'])
-            
+        1. Se llama a parsear_redirecciones(['cat', 'entrada.txt'])
+            - No hay redirecciones aquí.
+            - Retorna: 
+                comando_base = ['cat', 'entrada.txt']
+                redireccion_entrada = None
+                redireccion_salida = None
+                append = False
+        2. Como es el primer comando y no hay <, stdin_actual = None.
+        3. Como no es el último comando, stdout_actual = subprocess.PIPE (para encadenar con el siguiente comando).
+        4. Se ejecuta:
+            proceso = subprocess.Popen(['cat', 'entrada.txt'], stdout=subprocess.PIPE)
+        5. stdin_previo se actualiza con proceso.stdout.
+  4.  Iteración 2: Segundo comando - grep "error"
+        1. Se llama a parsear_redirecciones(['grep', 'error'])
+            - No hay redirecciones aquí.
+            - Retorna: 
+                comando_base = ['grep', 'error']
+        2. stdin_actual = stdin_previo (la salida de cat).
+        3. Como no es el último, stdout_actual = subprocess.PIPE.
+        4. Se ejecuta:
+            proceso = subprocess.Popen(['grep', 'error'], stdin=stdin_previo, stdout=subprocess.PIPE)
+        5. stdin_previo se actualiza con proceso.stdout.
+   5. Iteración 3: Último comando - sort > errores.txt
+        1. Se llama a parsear_redirecciones(['sort', '>', 'errores.txt'])
+            - Hay redirección de salida: redireccion_salida = "errores.txt" , append = False
+        2. Como es el último, stdout_actual = open("errores.txt", "w")
+        3. stdin_actual = stdin_previo (salida de grep).
+        4. Se ejecuta:
+            proceso = subprocess.Popen(['sort'], stdin=stdin_previo, stdout=archivo)
+   6. Se espera al último proceso con communicate(), pero no imprime nada porque hubo redirección a archivo.
   ```
 
+`parsear_redirecciones(partes)`
