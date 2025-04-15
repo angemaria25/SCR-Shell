@@ -56,57 +56,105 @@ El shell sigue un diseño modular con componentes claramente separados para el p
 
 `split_con_comillas(comando: str) -> List[str]`
 
-- **Objetivo**: Divide una cadena de comando en tokens, respetando los espacios dentro de comillas simples `'` y dobles `"`, mientras separa correctamente los operadores y argumentos. Es fundamental para preservar argumentos que contienen espacios dentro de comillas como una única unidad léxica.
+- **Objetivo**: Divide una cadena de comando en tokens, respetando los espacios dentro de comillas simples `'` y dobles `"`, mientras separa correctamente los operadores y argumentos. 
 - **Parámetro**: 
-    - `comando (str)`: Cadena de texto ya normalizada por `espacio_tokens()`. (ej: `"echo 'hola mundo' > salida.txt"`)
-- **Retorna**: Lista de tokens identificados, donde cada token es una palabra o un grupo de palabras entre comillas. (ej: `["echo", "'hola mundo'", ">", "salida.txt"]`)
-- **Proceso**: Esta función utiliza una máquina de estados simple para iterar sobre el comando carácter por carácter. Cambia su comportamiento en función del estado actual:
-    - Estado NORMAL: Agrega los caracteres a un buffer hasta encontrar una comilla o espacio.
-    - Estado ENTRE_COMILLAS: Mantiene los caracteres dentro de una comilla simple o doble como una unidad.
-    - Cuando se encuentra una comilla de cierre, el contenido del buffer se agrega como un único token.
-
-- **Ejemplo**:
+    - `comando (str)`: Cadena de texto que representa el comando de entrada del usuario, ya normalizada por `espacio_tokens()` para tener los operadores separados por espacios (ej: `"echo 'hola mundo' > salida.txt"`)
+- **Retorna**: Lista de cadenas, cada una representando un token individual, con las comillas ya eliminadas por `shlex.split`.
+- **Proceso**: 
+    1. Utiliza el módulo `shlex` de Python, configurado con `posix=True` de manera predeterminada .
+    2. Llama a shlex.split(comando) para dividir la entrada en tokens:
+        - Combina palabras entre comillas como un solo token.
+        - Maneja correctamente los caracteres escapados.
+        - Elimina las comillas externas del resultado.
+    3. Retorna la lista de tokens.
+- **Ejemplo1**:
   ```
-  entrada = "echo 'hola mundo' > salida.txt"
-  proceso: 
-  1. Estado inicial: Normal
-  2. 'e','c','h','o' → token_actual = "echo"
-  3. Espacio → guarda "echo", reinicia token_actual
-  4. "'" → entra en comillas simples
-  5. 'h','o','l','a',' ','m','u','n','d','o' → token_actual = "hola mundo"
-  6. "'" → sale de comillas simples
-  7. Espacio → guarda "'hola mundo'", reinicia token_actual
-  8. '>' → token_actual = ">"
-  9. Espacio → guarda ">", reinicia token_actual
-  10. 's','a','l','i','d','a','.','t','x','t' → token_actual = "salida.txt"
-  11. Fin → guarda "salida.txt"
-  # Retorna: ['echo', "'hola mundo'", '>', 'salida.txt']
+  entrada = echo "Hola mundo" > archivo.txt
+  salida: ['echo', 'Hola mundo', '>', 'archivo.txt']
+  ```
+
+- **Ejemplo2**:
+  ```
+  entrada = "grep 'error critico' < log.txt"
+  salida: ['grep', 'error critico', '<', 'log.txt']
   ```
 
 
-### Núcleo del Shell
+### Flujo de Ejecución General del Shell
 
 **main()**
 
-- **Objetivo**: Punto de entrada del programa. Ciclo principal que lee y ejecuta comandos.
-- **Parámetro**:
-- **Retorna**:
-- **Funcionamiento**: 
+- **Objetivo**: Punto de entrada del programa. Inicia el ciclo principal del shell, recibe el input del usuario, y delega el procesamiento y ejecución del comando.
+- **Proceso**: 
     - Imprime el prompt  `($ )`
     - Lee la línea de entrada.
     - Procesa el comando con `espacio_tokens()` y `split_con_comillas()`
     - Llama a ejecutar_comando(linea).
+- **Flujo**:
+    main
+    └──> espacio_tokens
+        └──> split_con_comillas
+            └──> ejecutar_comando
+                    ├──> ejecutar_cd (si el comando es 'cd')
+                    ├──> ejecutar_jobs (si el comando es 'jobs')
+                    ├──> ejecutar_fg (si el comando es 'fg')
+                    ├──> ejecutar_comando_background (si el comando termina en '&')
+                    ├──> ejecutar_con_pipes (si contiene '|')
+                    ├──> ejecutar_con_redirecciones (si contiene '<', '>', '>>')
+                    └──> ejecutar_simple (para un comando simple sin nada especial)
+
 - **Ejemplo**:
   ```
-  Entrada = echo "Prueba técnica" | grep "técnica" > resultado.txt &
+  entrada = echo "Prueba técnica" | grep "técnica" > resultado.txt &
   Proceso:
-  1. espacio_tokens() normaliza a: echo "Prueba técnica" | grep "técnica" > resultado.txt &
-  2. split_con_comillas() produce: ['echo', '"Prueba técnica"', '|', 'grep', '"técnica"', '>', 'resultado.txt', '&']
+  1. espacio_tokens() normaliza entrada
+  2. split_con_comillas() produce: ['echo', 'Prueba técnica', '|', 'grep', 'técnica', '>', 'resultado.txt', '&']
   3. ejecutar_comando() detecta pipeline + background:
   - Crea 2 subprocesos conectados por pipe
   - Redirige salida final a resultado.txt
   - Registra job en background_jobs con ID incremental
   ```
 
+`ejecutar_comando(tokens: List[str])`
 
+- **Objetivo**: Gestiona la ejecución de un comando del shell a partir de una lista de tokens, determinando si se trata de un comando interno `(cd, jobs, fg)`, si se ejecuta en segundo plano `&`, si contiene pipes `|` o redirecciones `(>, <, >>)`, y ejecutándolo con la función adecuada en cada caso.
+- **Parámetro**: 
+    - `tokens (list[str])`: Lista de tokens obtenidos por `split_con_comillas`.
+- **Retorna**: No retorna explícitamente nada. Su propósito es controlar el flujo de ejecución de comandos dependiendo de su tipo y estructura.
+- **Proceso**:
+    1. Si `tokens` está vacío, la función retorna sin hacer nada.
+    2. Si el primer token es `cd`, se llama a  `ejecutar_cd(tokens)` con todos los tokens (ya que puede incluir el directorio destino).
+    3. Si el primer token es `"jobs"`:
+        - Si el segundo token es `"-l"`, llama a `listar_jobs(mostrar_detalles=True)`.
+        - En cualquier otro caso, llama a `listar_jobs()` sin argumentos.
+    4. Si el comando es `"fg"`:
+        - Si hay un segundo token, lo pasa como argumento a `ejecutar_fg()` (representa el job id o %job_id).
+        - Si no, llama a `ejecutar_fg(None)` para traer el último job en segundo plano al frente.
+    5. Si el **último token** es `"&"`:
+        - Se marca `is_background = True`.
+        - Se elimina `"&"` de la lista de tokens para no interferir con el resto del procesamiento.
+    6. Manejo de pipes (`|`):
+        - Se reconstruye el comando como string (`comando_str = " ".join(tokens)`).
+        - Si hay un pipe (`"|" in comando_str"`), se llama a `manejar_pipes(comando_str, is_background)` y se retorna.
+    7. Manejo de redirecciones (`<`, `>`, `>>`) o ejecución normal:
+        - Se llama a `parsear_redirecciones(tokens)` que retorna:
+            - `comando_base`: lista de tokens del comando base sin redirecciones.
+            - `redireccion_salida`: nombre de archivo de salida si existe (None si no).
+            - `redireccion_entrada`: archivo de entrada si existe (None si no).
+            - `append`: booleano indicando si es `>>` (append) o `>` (sobrescribe).
+        - Luego se llama a `ejecutar_comando_redirecciones()` pasando esos elementos junto con `is_background`.
 
+- **Ejemplo**:
+  ```
+  entrada = ["cat", "entrada.txt", "|", "grep", "error", ">", "salida.txt", "&"]
+  Proceso:
+  1. Verifica si tokens esta vacío. ---- ❌ → Hay tokens → sigue.
+  2. Verifica si es un comando interno como `jobs`, `fg`, `cd`. ---- ❌ → El primer token es `cat`.
+  3. Verifica si es en segundo plano `&`. ---- ✅ → El último token es `"&"`. 
+    - Se elimina el `&`:
+        tokens = ["cat", "entrada.txt", "|", "grep", "error", ">", "salida.txt"]
+        is_background = True
+  4. Verifica si contiene pipes `|`. ---- ✅ →  porque `"|" in comando_str`.
+    - Entonces llama a :
+        `manejar_pipes("cat entrada.txt | grep error > salida.txt", is_background=True)`
+  ```
