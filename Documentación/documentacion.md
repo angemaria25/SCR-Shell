@@ -21,7 +21,6 @@ El shell sigue un diseño modular con componentes claramente separados para el p
 - **Objetivo**: Normaliza los espacios alrededor de operadores especiales `(>, <, |, >>)` en un comando de shell para facilitar su posterior tokenización y procesamiento.
 - **Parámetro**: 
     - `comando`: Cadena de texto ingresada por el usuario (ej: `"ls -l>out.txt"`)
-- **Retorna**: Cadena de texto con espacios normalizados alrededor de operadores (ej: `"ls -l > out.txt"`)
 - **Proceso**: 
     1. Identificación de operadores:
         - Usa expresión regular para encontrar:
@@ -32,6 +31,7 @@ El shell sigue un diseño modular con componentes claramente separados para el p
         - Divide la cadena en todos los espacios blancos.
         - Vuelve a unir con un solo espacio entre elementos.
         - Elimina espacios al inicio/final.
+- **Retorna**: Cadena de texto con espacios normalizados alrededor de operadores (ej: `"ls -l > out.txt"`)
 - **Ejemplo1**:
   ```
   entrada = "ls -l>out.txt"
@@ -42,7 +42,6 @@ El shell sigue un diseño modular con componentes claramente separados para el p
   3. Retorna: "ls -l > out.txt"
   salida = espacio_tokens(entrada)  # "ls -l > out.txt"
   ```
-
 - **Ejemplo2**:
   ```
   entrada = "cat file.txt|grep \"error\""
@@ -59,7 +58,6 @@ El shell sigue un diseño modular con componentes claramente separados para el p
 - **Objetivo**: Divide una cadena de comando en tokens, respetando los espacios dentro de comillas simples `'` y dobles `"`, mientras separa correctamente los operadores y argumentos. 
 - **Parámetro**: 
     - `comando (str)`: Cadena de texto que representa el comando de entrada del usuario, ya normalizada por `espacio_tokens()` para tener los operadores separados por espacios (ej: `"echo 'hola mundo' > salida.txt"`)
-- **Retorna**: Lista de cadenas, cada una representando un token individual, con las comillas ya eliminadas por `shlex.split`.
 - **Proceso**: 
     1. Utiliza el módulo `shlex` de Python, configurado con `posix=True` de manera predeterminada .
     2. Llama a shlex.split(comando) para dividir la entrada en tokens:
@@ -67,12 +65,12 @@ El shell sigue un diseño modular con componentes claramente separados para el p
         - Maneja correctamente los caracteres escapados.
         - Elimina las comillas externas del resultado.
     3. Retorna la lista de tokens.
+- **Retorna**: Lista de cadenas, cada una representando un token individual, con las comillas ya eliminadas por `shlex.split`.
 - **Ejemplo1**:
   ```
   entrada = echo "Hola mundo" > archivo.txt
   salida: ['echo', 'Hola mundo', '>', 'archivo.txt']
   ```
-
 - **Ejemplo2**:
   ```
   entrada = "grep 'error critico' < log.txt"
@@ -120,7 +118,6 @@ El shell sigue un diseño modular con componentes claramente separados para el p
 - **Objetivo**: Gestiona la ejecución de un comando del shell a partir de una lista de tokens, determinando si se trata de un comando interno `(cd, jobs, fg)`, si se ejecuta en segundo plano `&`, si contiene pipes `|` o redirecciones `(>, <, >>)`, y ejecutándolo con la función adecuada en cada caso.
 - **Parámetro**: 
     - `tokens (list[str])`: Lista de tokens obtenidos por `split_con_comillas`.
-- **Retorna**: No retorna explícitamente nada. Su propósito es controlar el flujo de ejecución de comandos dependiendo de su tipo y estructura.
 - **Proceso**:
     1. Si `tokens` está vacío, la función retorna sin hacer nada.
     2. Si el primer token es `cd`, se llama a  `ejecutar_cd(tokens)` con todos los tokens (ya que puede incluir el directorio destino).
@@ -143,18 +140,64 @@ El shell sigue un diseño modular con componentes claramente separados para el p
             - `redireccion_entrada`: archivo de entrada si existe (None si no).
             - `append`: booleano indicando si es `>>` (append) o `>` (sobrescribe).
         - Luego se llama a `ejecutar_comando_redirecciones()` pasando esos elementos junto con `is_background`.
-
-- **Ejemplo**:
+- **Retorna**: No retorna explícitamente nada. Su propósito es controlar el flujo de ejecución de comandos dependiendo de su tipo y estructura.
+- **Ejemplo1**:
+  ```
+  entrada = ["sort", "<", "nombres.txt", ">", "ordenados.txt"]
+  Proceso:
+  1. Verifica si tokens esta vacío. ---- ❌ → Hay tokens → sigue.
+  2. Verifica si es un comando interno como jobs, fg, cd. ---- ❌ → El primer token es "sort".
+  3. Verifica si es en segundo plano (&). ---- ❌ → El último token no es "&". 
+    - is_background = False
+  4. Verifica si contiene pipes (|). ---- ❌ →  porque "|" in comando_str es False.
+    - Entonces llama a :
+        comando_base, redireccion_salida, redireccion_entrada, append = parsear_redirecciones(tokens)
+        - Y luego llama a ejecutar_comando_redirecciones() con el resultado de parsear_redirecciones().
+  ```
+- **Ejemplo2**:
   ```
   entrada = ["cat", "entrada.txt", "|", "grep", "error", ">", "salida.txt", "&"]
   Proceso:
   1. Verifica si tokens esta vacío. ---- ❌ → Hay tokens → sigue.
-  2. Verifica si es un comando interno como `jobs`, `fg`, `cd`. ---- ❌ → El primer token es `cat`.
-  3. Verifica si es en segundo plano `&`. ---- ✅ → El último token es `"&"`. 
-    - Se elimina el `&`:
+  2. Verifica si es un comando interno como jobs, fg, cd. ---- ❌ → El primer token es "cat".
+  3. Verifica si es en segundo plano (&). ---- ✅ → El último token es "&". 
+    - Se elimina el "&":
         tokens = ["cat", "entrada.txt", "|", "grep", "error", ">", "salida.txt"]
         is_background = True
-  4. Verifica si contiene pipes `|`. ---- ✅ →  porque `"|" in comando_str`.
+  4. Verifica si contiene pipes (|). ---- ✅ →  porque "|" in comando_str es True.
     - Entonces llama a :
-        `manejar_pipes("cat entrada.txt | grep error > salida.txt", is_background=True)`
+        manejar_pipes("cat entrada.txt | grep error > salida.txt", is_background=True)
   ```
+
+
+`manejar_pipes(comando, background=False)`
+
+- **Objetivo**: Ejecuta comandos que incluyen tuberías (`|`) y, opcionalmente, redirecciones de entrada (`<`) y salida (`>`, `>>`), respetando las restricciones: 
+    - `<` solo está permitido en el primer comando.
+    - `>` o `>>` solo están permitidos en el último comando.
+    - También soporta la ejecución en segundo plano (`&`) si se indica en el parámetro `background=True`.
+- **Parámetros**: 
+    - `comando (str)`: El comando completo como cadena con pipes y posibles redirecciones (ej: "cat archivo.txt | grep hola | sort > salida.txt").
+    - `background (bool)`: Indica si el comando debe ejecutarse en segundo plano.
+- **Proceso**:
+    1. Separar los comandos por `|` y limpiar los espacios.
+    2. Iterar sobre cada comando:
+        - Detectar redirecciones usando `parsear_redirecciones()`.
+        - Validar reglas de uso de redirecciones.
+        - Configurar correctamente `stdin` y `stdout` dependiendo de si está al inicio, al medio o al final.
+    3. Crear los procesos conectados mediante `subprocess.PIPE` entre ellos.
+    4. Si es en segundo plano, se guarda en `background_jobs`, si no, espera a que termine y muestra el resultado del último comando.
+- **Retorna**: 
+    - No retorna explícitamente, pero imprime salidas y errores del último proceso si no hay redirección.
+    - Si es en background, imprime el job ID y PID del proceso final.
+- **Ejemplo**:
+  ```
+  entrada = cat entrada.txt | grep "error" | sort > errores.txt
+  Proceso:
+  1. Separación del comando por pipes.
+  2. Limpieza de comandos y creación de lista comandos → salida: ["cat entrada.txt", 'grep "error"', "sort > errores.txt"] 
+  3. Iteración 1: Primer comando - cat entrada.txt
+        - Se llama a parsear_redirecciones(['cat', 'entrada.txt'])
+            
+  ```
+
