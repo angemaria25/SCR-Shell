@@ -27,15 +27,19 @@ SCR-Shell/
 - Sistema compatible con comandos Unix (Linux/macOS o WSL en Windows)
 
 **📥 Clonación del repositorio**
+```
 git clone https://github.com/angemaria25/SCR-Shell.git
 cd SCR-Shell
+```
 
 **🚀 Ejecución del Shell**
+```
 python3 shell.py
+```
 
 **Esto iniciará el shell personalizado. Verás un prompt donde puedes escribir comandos como `ls`, `cd`, `grep`, usar `|`, redirecciones `>`, `<`, y comandos como `jobs`, `fg`, etc.**
 
-**❗Notas**
+**❗Notas:**
 - El shell se ejecuta en modo interactivo.
 - Si estás usando Windows, se recomienda usar WSL o una máquina virtual con Linux para compatibilidad con los comandos Unix.
 - Para salir del shell, puedes usar Ctrl+C o exit.
@@ -66,13 +70,6 @@ Traer trabajo al foreground: $ fg %1
                                  sleep 5
                             
 ```
-
-## ⚙️ Comportamientos Especiales
-
-- `cd - ` → cambia al último directorio
-- Manejo de comillas simples ' ' y dobles " " para que los argumentos no se separen por espacios
-- Pipes con múltiples comandos encadenados
-- Limpieza automática de jobs terminados
 
 ## 📝 Licencia
 Este proyecto está licenciado bajo la **Licencia MIT**.  
