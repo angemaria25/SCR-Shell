@@ -421,6 +421,34 @@ salida: [1]+ 12350 Running comando1
              12352       | comando3 & 
 ```
 
+**`limpiar_jobs_terminados()`**
 
-
+- **Objetivo**: 
+    - Gestiona la limpieza automática de trabajos en segundo plano (`background_jobs`) que ya han terminado.
+    - Elimina únicamente aquellos que:
+        - Han terminado completamente.
+        - Ya fueron mostrados al usuario en una ejecución previa del comando `jobs` o `jobs -l`.
+    - Esto permite que los trabajos aparezcan una vez más tras su finalización, y luego sean eliminados al ejecutar `listar_jobs()` de nuevo, emulando el comportamiento típico de shells.
+    - Además, si no queda ningún trabajo activo en segundo plano, reinicia el contador global `job_id_counter` a 1.
+- **Variables Globales**:
+    - `background_jobs (dict)`: Diccionario que contiene información sobre los trabajos en segundo plano.
+    - `job_id_counter (int)`: Contador que se incrementa con cada nuevo trabajo, reiniciado si no quedan trabajos activos.
+- **Proceso**:
+    1. Inicializa `jobs_a_eliminar`:
+        - Una lista vacía que almacenará los `job_id` que deben eliminarse.
+    2. Itera sobre los trabajos (copia temporal con `list(background_jobs.items())`):
+        - Se usa una copia para evitar errores al modificar el diccionario durante la iteración.
+    3. Para cada trabajo:
+        - Inicializa `todos_terminados = True`.
+        - Revisa cada proceso dentro de la lista `job_info["process"]`:
+            - Si alguno aún no ha terminado (`poll() is None`), cambia `todos_terminados = False` y rompe el ciclo.
+    4. Si todos los procesos han terminado:
+        - Si `ya_mostrado` está en `True`, agrega el `job_id` a `jobs_a_eliminar`.
+        - Si `ya_mostrado` es `False` (primera vez que se detecta como terminado), marca `job_info["ya_mostrado"] = True`.
+    5. Elimina los trabajos cuyo `job_id` esté en `jobs_a_eliminar`.
+    6. Si después de la limpieza no queda ningún trabajo (`if not background_jobs:`), se reinicia `job_id_counter = 1`.
+- **Comportamiento esperado**: 
+    - Los trabajos se mostrarán **una única vez como "Done"** al usuario cuando terminen.
+    - En la siguiente ejecución de `listar_jobs()`, serán eliminados silenciosamente.
+    - Si no queda ningún trabajo activo, se reinicia el contador a 1, reutilizando IDs en futuros comandos.
 
