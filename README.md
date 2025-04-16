@@ -47,28 +47,15 @@ SCR-Shell/
 ## 🧪 Ejemplos de Uso
 
 ```bash
-Comando simple: $ ls
-
-Redirección de salida: $ echo "Hola mundo" > saludo.txt
-
-Redirección de entrada : $ wc < saludo.txt
-
-Append a archivo: $ echo "Otra línea" >> saludo.txt
-
-Comando con pipes: $ cat saludo.txt | grep Hola
-
-Proceso en segundo plano: $ sleep 5 &
-                             [1] 12345
-
-Ver trabajos en background: $ jobs
-                               [1]+ Running sleep 5 &
-
-Detalles extendidos: $ jobs -l
-                        [1]+ 12345 Running sleep 5 &
-
-Traer trabajo al foreground: $ fg %1
-                                 sleep 5
-                            
+**Comando simple**: $ ls
+**Redirección de salida**: $ echo "Hola mundo" > saludo.txt
+**Redirección de entrada** : $ wc < saludo.txt
+**Append a archivo**: $ echo "Otra línea" >> saludo.txt
+**Comando con pipes**: $ cat saludo.txt | grep Hola
+**Proceso en segundo plano**: $ sleep 5 &
+**Ver trabajos en background**: $ jobs
+**Detalles extendidos**: $ jobs -l
+**Traer trabajo al foreground**: $ fg %1
 ```
 
 ## 📝 Licencia
