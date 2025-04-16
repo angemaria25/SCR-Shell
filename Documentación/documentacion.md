@@ -361,3 +361,66 @@ main
         - Guarda el proceso como job en background.
         - Muestra: [1] 12345 (por ejemplo)
   ```
+
+
+**`listar_jobs(mostrar_detalles=False)`**
+
+- **Objetivo**: 
+    - Muestra en la terminal la lista de trabajos que el usuario ha puesto en segundo plano utilizando `&`. Informa sobre su **estado actual** (`Running` o `Done`), su **identificador** (`job_id`), **PIDs asociados** (si es una pipeline) y el **comando original ejecutado**.
+    - Imita el comportamiento del comando `jobs` y `jobs -l`del shell de Unix.
+- **Parámetros**: 
+    - `mostrar_detalles (bool)`:
+        - `True`: muestra información detallada: los PIDs individuales y las partes del comando si hay pipelines.
+        - `False (por defecto)`: se muestra información resumida con el ID del trabajo, estado y comando original.
+- **Variable globale**: 
+    - `background_jobs (dict)`: Diccionario que almacena los trabajos en segundo plano.
+```
+background_jobs = {
+    job_id: {
+        "command": str,
+        "process": list[subprocess.Popen]
+    },
+    ...
+}
+```
+- **Proceso**: 
+    1. Limpieza de trabajos terminados:
+        - Llama a `limpiar_jobs_terminados()` para remover de `background_jobs` los trabajos cuyos procesos ya finalizaron.
+    2. Verificación de existencia de trabajos:
+        - Si no hay trabajos activos (`background_jobs está vacío`), se imprime `"No hay procesos en el background."` y retorna.
+    3. Cálculo del ID más alto:
+        - Se identifica el `max_job_id` para marcar el trabajo más reciente con `+` y el penúltimo con `-`, replicando el comportamiento estándar del shell.
+    4. Para cada trabajo:
+        - Se verifica si algún proceso del trabajo sigue activo (`poll() is None`).
+        - Se define el **estado** del trabajo: `"Running"` o `"Done"`.
+        - Se elimina el carácter `&` del final del comando si el trabajo ha terminado.
+        - Se muestra el resultado en función del valor de `mostrar_detalles`.
+    5. Visualización del comando:
+        - Según el valor de `mostrar_detalles`, se imprime:
+            - Una línea por proceso (si es un pipeline), con PID, símbolo de pipe (`|`) y el fragmento del comando correspondiente.
+            - Una línea simple si el trabajo tiene un solo proceso.
+- **Retorna**: No retorna nada, imprime la información de los trabajos activos directamente a la salida estándar.
+- **Ejemplo1**:
+```
+entrada = sleep 60 &
+comando: jobs
+salida: [1]+ Running  sleep 60 &
+```
+- **Ejemplo2**:
+```
+entrada = ls -l &  #El proceso termina casi inmediatamente.
+comando: jobs
+salida: [2]- Done    ls -l
+```
+- **Ejemplo3**:
+```
+entrada = comando1 | comando2 | comando3 &
+comando: jobs -l
+salida: [1]+ 12350 Running comando1
+             12351       | comando2
+             12352       | comando3 & 
+```
+
+
+
+
