@@ -452,3 +452,57 @@ salida: [1]+ 12350 Running comando1
     - En la siguiente ejecución de `listar_jobs()`, serán eliminados silenciosamente.
     - Si no queda ningún trabajo activo, se reinicia el contador a 1, reutilizando IDs en futuros comandos.
 
+
+**`ejecutar_fg(job_arg)`**
+
+- **Objetivo**: Trae un trabajo de segundo plano (background) al primer plano (foreground), identificándolo por su ID de job. Este comando simula el comportamiento clásico del comando `fg` de shells Unix.
+- **Parámetro**:
+    - `job_arg (str o None)`: El identificador del trabajo (ej:`"%2"` o `"2"`). Si es `None`, se selecciona automáticamente el trabajo con el ID más alto (el más reciente).
+- **Variables Globales**: 
+    - `background_jobs (dict)`: Diccionario donde se almacenan los trabajos en segundo plano activos.
+    - `job_id_counter (int)`: Contador que se reinicia a 1 cuando ya no hay trabajos activos.
+- **Proceso**:
+    1. Verificación de trabajos activos:
+        - Si no hay trabajos en segundo plano, se imprime un mensaje y se retorna.
+    2. Determinación del `job_id`:
+        - Si `job_arg` es `None`, toma el job más reciente (`max(background_jobs.keys())`).
+        - Si se proporciona, elimina el `%` y lo convierte a `int`.
+            - Si el ID no existe en `background_jobs`, lanza error.
+            - Si no es un número válido, lanza error.
+    3. Obtiene `job_info` del `job_id` correspondiente:
+        - Muestra en pantalla el comando (sin el `&` final).
+        - Elimina el job de `background_jobs` (ya que pasará a primer plano).
+    4. Reinicia el contador de IDs si ya no hay más trabajos.
+    5. Espera la finalización de todos los procesos en ese job (`proceso.wait()`):
+        - Bloquea hasta que terminen.
+        - Si el usuario presiona `Ctrl+C`, captura `KeyboardInterrupt` y continúa.
+- **Ejemplo1**:
+```
+entrada = sleep 5 &
+salida: [1] 1214
+comando: fg
+salida: sleep 5 #El proceso sleep 5 pasa a foreground y bloquea la terminal hasta terminar.
+```
+- **Ejemplo2**:
+```
+entrada = sleep 10 | sort &
+salida: [2]+ 1215
+comando: fg %2
+salida: sleep 10 | sort  #El job 2 pasa al foreground. Si presionas Ctrl+C, el proceso se interrumpe.
+```
+- **Ejemplo3**:
+```
+comando: fg %7
+salida: fg: %7: no existe ese job
+```
+- **Ejemplo4**:
+```
+comando: fg hola
+salida: fg: el job_id debe ser un número
+```
+
+
+
+
+
+
