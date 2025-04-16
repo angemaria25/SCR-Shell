@@ -28,9 +28,9 @@ cd SCR-Shell
 python3 shell.py
 ```
 
-**Esto iniciará el shell personalizado. Verás un prompt donde puedes escribir comandos como `ls`, `cd`, `grep`, usar `|`, redirecciones `>`, `<`, y comandos como `jobs`, `fg`, etc.**
+Esto iniciará el shell personalizado. Verás un prompt donde puedes escribir comandos como `ls`, `cd`, `grep`, usar `|`, redirecciones `>`, `<`, y comandos como `jobs`, `fg`, etc.
 
-**❗Notas:**
+**❗Nota:**
 - El shell se ejecuta en modo interactivo.
 - Si estás usando Windows, se recomienda usar WSL o una máquina virtual con Linux para compatibilidad con los comandos Unix.
 - Para salir del shell, puedes usar Ctrl+C o exit.
@@ -40,8 +40,8 @@ python3 shell.py
 SCR-Shell/
 ├── shell.py               # Archivo principal del shell (main loop y ejecución de comandos).
 ├── README.md              # Documentación del proyecto.
-└── Documentación/
-    ├── documentacion.md   # Documentación técnica adicional.
+└── Documents/
+    ├── docs.md            # Documentación técnica adicional.
 ```
 
 ## 🧪 Ejemplos de Uso
