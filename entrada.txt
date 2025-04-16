@@ -1,5 +1,0 @@
-Documentación
-entrada.txt
-README.md
-shell.py
-hola
