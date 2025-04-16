@@ -46,7 +46,7 @@ SCR-Shell/
 
 ## 🧪 Ejemplos de Uso
 
-```bash
+```
 **Comando simple**: $ ls
 **Redirección de salida**: $ echo "Hola mundo" > saludo.txt
 **Redirección de entrada** : $ wc < saludo.txt
