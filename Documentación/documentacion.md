@@ -89,17 +89,18 @@ El shell sigue un diseño modular con componentes claramente separados para el p
     - Procesa el comando con `espacio_tokens()` y `split_con_comillas()`
     - Llama a ejecutar_comando(linea).
 - **Flujo**:
-    main
-    └──> espacio_tokens
-        └──> split_con_comillas
-            └──> ejecutar_comando
-                    ├──> ejecutar_cd (si el comando es 'cd')
-                    ├──> ejecutar_jobs (si el comando es 'jobs')
-                    ├──> ejecutar_fg (si el comando es 'fg')
-                    ├──> ejecutar_comando_background (si el comando termina en '&')
-                    ├──> ejecutar_con_pipes (si contiene '|')
-                    ├──> ejecutar_con_redirecciones (si contiene '<', '>', '>>')
-                    └──> ejecutar_simple (para un comando simple sin nada especial)
+```
+main
+└──> espacio_tokens
+    └──> split_con_comillas
+        └──> ejecutar_comando
+                ├──> ejecutar_cd (si el comando es "cd")
+                ├──> listar_jobs (si el comando es "jobs")
+                ├──> ejecutar_fg (si el comando es "fg")
+                ├──> manejar_pipes (si contiene "|")
+                ├──> parsear_redirecciones (si contiene "<", ">", ">>")
+                └──> ejecutar_comando_redirecciones (si contiene redirecciones o es un comando simple)
+```
 
 - **Ejemplo**:
   ```
