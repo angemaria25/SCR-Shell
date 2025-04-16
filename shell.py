@@ -142,12 +142,6 @@ def manejar_pipes(comando, background=False):
         print(error or "", end="")
         
 def parsear_redirecciones(partes):
-    """
-    Parsea los tokens de un comando para detectar redirecciones:
-    - comando > archivo
-    - comando >> archivo
-    - comando < archivo
-    """
     redireccion_salida = None
     redireccion_entrada = None
     append = False 
@@ -176,11 +170,6 @@ def parsear_redirecciones(partes):
     return comando_base, redireccion_salida, redireccion_entrada, append
         
 def ejecutar_comando_redirecciones(comando_base, redireccion_salida, redireccion_entrada, append, background=False):
-    """
-    Ejecuta un comando individual con posibles redirecciones:
-    - No soporta pipes (|) - para eso usar manejar_pipes().
-    - No permite redirección de entrada y salida simultáneas en un mismo comando simple.
-    """
     global background_jobs, job_id_counter
     
     stdin_file = None
