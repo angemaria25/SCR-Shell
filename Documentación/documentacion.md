@@ -16,7 +16,7 @@ El shell sigue un diseño modular con componentes claramente separados para el p
 
 ### Componentes Fundamentales
 
-`espacio_tokens(comando: str) -> str`
+**`espacio_tokens(comando: str) -> str`**
 
 - **Objetivo**: Normaliza los espacios alrededor de operadores especiales `(>, <, |, >>)` en un comando de shell para facilitar su posterior tokenización y procesamiento.
 - **Parámetro**: 
@@ -53,7 +53,7 @@ El shell sigue un diseño modular con componentes claramente separados para el p
   salida = espacio_tokens(entrada)  # "cat file.txt | grep "error""
   ```
 
-`split_con_comillas(comando: str) -> List[str]`
+**`split_con_comillas(comando: str) -> List[str]`**
 
 - **Objetivo**: Divide una cadena de comando en tokens, respetando los espacios dentro de comillas simples `'` y dobles `"`, mientras separa correctamente los operadores y argumentos. 
 - **Parámetro**: 
@@ -113,7 +113,7 @@ El shell sigue un diseño modular con componentes claramente separados para el p
   - Registra job en background_jobs con ID incremental
   ```
 
-`ejecutar_comando(tokens: List[str])`
+**`ejecutar_comando(tokens: List[str])`**
 
 - **Objetivo**: Gestiona la ejecución de un comando del shell a partir de una lista de tokens, determinando si se trata de un comando interno `(cd, jobs, fg)`, si se ejecuta en segundo plano `&`, si contiene pipes `|` o redirecciones `(>, <, >>)`, y ejecutándolo con la función adecuada en cada caso.
 - **Parámetro**: 
@@ -169,7 +169,7 @@ El shell sigue un diseño modular con componentes claramente separados para el p
         manejar_pipes("cat entrada.txt | grep error > salida.txt", is_background=True)
   ```
 
-`ejecutar_cd(tokens: List[str])`
+**`ejecutar_cd(tokens: List[str])`**
 
 - **Objetivo**: 
     - Cambiar el directorio actual del shell al especificado por el usuario, con soporte para rutas relativas, absolutas, directorio home (`~`), directorio padre (`..`), cambio al último directorio (`-`) y rutas relativas al home (`~/ruta`).
@@ -183,11 +183,17 @@ El shell sigue un diseño modular con componentes claramente separados para el p
 - **Proceso**:
     1. Se guarda el directorio actual con `os.getcwd()` antes de hacer cualquier cambio.
     2. Se analizan los argumentos para determinar el comportamiento del comando:
-        - **Sin argumentos o con** `~`: se cambia al directorio home del usuario usando `os.path.expanduser("~")`.
-        - 
-    3. 
+        - Sin argumentos o con `~`: se cambia al directorio home del usuario usando `os.path.expanduser("~")`.
+        - Con `..`: se cambia al directorio padre.
+        - Con `-`: se intenta volver al directorio anterior almacenado en `ultimo_directorio`.
+            - Si `ultimo_directorio` está definido, se cambia a ese directorio e imprime un mensaje indicando el cambio.
+            - Si no está definido, informa que no hay un directorio anterior.
+        - Con ruta que empieza por `~/`: se expande la ruta relativa al home con `os.path.expanduser`.
+        - Cualquier otra ruta: se interpreta literalmente y se intenta acceder a esa ubicación.
+    3. Si el cambio de directorio fue exitoso, se actualiza `ultimo_directorio` con la ruta anterior (`directorio_actual`).
+    4. Si ocurre un error (como que el directorio no exista o sea inaccesible), se muestra un mensaje informativo.
 
-`manejar_pipes(comando, background=False)`
+**`manejar_pipes(comando, background=False)`**
 
 - **Objetivo**: Ejecuta comandos que incluyen tuberías (`|`) y, opcionalmente, redirecciones de entrada (`<`) y salida (`>`, `>>`), respetando las restricciones: 
     - `<` solo está permitido en el primer comando.
@@ -246,7 +252,7 @@ El shell sigue un diseño modular con componentes claramente separados para el p
    6. Se espera al último proceso con communicate(), pero no imprime nada porque hubo redirección a archivo.
   ```
 
-`parsear_redirecciones(partes)`
+**`parsear_redirecciones(partes)`**
 
 - **Objetivo**: Extrae las redirecciones `<`, `>`, `>>` desde una lista de tokens.
 - **Parámetro**: 
@@ -293,7 +299,7 @@ El shell sigue un diseño modular con componentes claramente separados para el p
         comando_base = ["sort", "archivo.txt"]
   ```
             
-`ejecutar_comando_redirecciones(comando_base, redireccion_salida, redireccion_entrada, append, background=False)`
+**`ejecutar_comando_redirecciones(comando_base, redireccion_salida, redireccion_entrada, append, background=False)`**
 
 - **Objetivo**: 
     - Ejecuta un comando individual que ya fue preprocesado para detectar si tiene redirecciones o si se ejecuta en background.
