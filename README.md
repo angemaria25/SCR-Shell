@@ -12,15 +12,6 @@ Este proyecto implementa un intérprete de comandos (shell) en Python, capaz de 
 - 📋 Comando jobs para listar procesos en background `(jobs, jobs -l)`
 - 🎯 Comando `fg` para traer procesos al foreground
 
-## 📁 Estructura del Proyecto
-```
-SCR-Shell/
-├── shell.py               # Archivo principal del shell (main loop y ejecución de comandos).
-├── README.md              # Documentación del proyecto.
-└── Documentación/
-    ├── documentacion.md   # Documentación técnica adicional.
-```
-
 ## 🧰 Instalación y Uso
 **🔧 Requisitos**
 - Python 3.6 o superior
@@ -43,6 +34,15 @@ python3 shell.py
 - El shell se ejecuta en modo interactivo.
 - Si estás usando Windows, se recomienda usar WSL o una máquina virtual con Linux para compatibilidad con los comandos Unix.
 - Para salir del shell, puedes usar Ctrl+C o exit.
+
+## 📁 Estructura del Proyecto
+```
+SCR-Shell/
+├── shell.py               # Archivo principal del shell (main loop y ejecución de comandos).
+├── README.md              # Documentación del proyecto.
+└── Documentación/
+    ├── documentacion.md   # Documentación técnica adicional.
+```
 
 ## 🧪 Ejemplos de Uso
 
