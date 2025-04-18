@@ -55,7 +55,14 @@ Este proyecto implementa un shell interactivo en Python que soporta:
 - **Parámetro**: 
     - `comando (str)`: Cadena de texto que representa el comando de entrada del usuario, ya normalizada por `espacio_tokens()` para tener los operadores separados por espacios (ej: `"echo 'hola mundo' > salida.txt"`)
 - **Proceso**: 
-- **Retorna**: Lista de cadenas, cada una representando un token individual.
+    1. Inicializa una lista vacía `tokens` para almacenar los resultados, y una cadena `token_actual` para acumular caracteres de cada token.
+    2. Usa dos variables booleanas (`dentro_comillas_dobles` y `dentro_comillas_simples`) para rastrear si el parser está actualmente dentro de comillas dobles o simples.
+    3. Recorre cada carácter del comando:
+        - Si encuentra una comilla doble y no está dentro de comillas simples, alterna el estado de `dentro_comillas_dobles`.
+        - Si encuentra un espacio y no está dentro de ninguna comilla, considera que termina un token: agrega el `token_actual` a la lista y lo reinicia.
+        - En cualquier otro caso, agrega el carácter actual a `token_actual`
+    4. Al final del bucle, si `token_actual` no está vacío, se añade a `tokens`.
+- **Retorna**: Lista de tokens correctamente divididos, respetando el agrupamiento por comillas.
 - **Ejemplo1**:
   ```
   entrada = "echo 'Hola mundo' > archivo.txt"
