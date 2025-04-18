@@ -133,10 +133,9 @@ def manejar_pipes(comando, background=False):
         return 
         
     salida, error = procesos[-1].communicate()
-        
-    #mostrar salida del último comando.
+    
     if procesos[-1].returncode == 0:
-        if procesos[-1].stdout == subprocess.PIPE:  # Solo mostrar si no hubo redirección
+        if procesos[-1].stdout == subprocess.PIPE:  
             print(salida or "", end="")
     else:
         print(error or "", end="")
@@ -251,12 +250,11 @@ def listar_jobs(mostrar_detalles=False):
         estado = "Running" if job_en_ejecucion else "Done"
         simbolo = "+" if job_id == max_job_id else "-"
         
-        #Quitar & si el proceso terminó
         comando = job_info["command"]
         if not job_en_ejecucion:
             comando = comando.rstrip(" &")
             
-        if mostrar_detalles: #jobs -l
+        if mostrar_detalles: 
             if len(job_info["process"]) > 1:
                 partes_comando = job_info["command"].split('|')
                 for i, proceso in enumerate(job_info["process"]):
@@ -267,11 +265,9 @@ def listar_jobs(mostrar_detalles=False):
                         terminator = " &" if (job_en_ejecucion and es_ultimo) else ""
                         print(f"    {proceso.pid:>6}       | {partes_comando[i].strip()}{terminator}")
             else:
-                #jobs -l sin pipes
                 terminator = " &" if job_en_ejecucion else ""
                 print(f"[{job_id}]{simbolo} {job_info['process'][0].pid:>6} {estado:<7} {job_info['command']}{terminator}")
         else:
-            #jobs
             terminator = " &" if job_en_ejecucion else ""
             print(f"[{job_id}]{simbolo} {estado:<7} {job_info['command']}{terminator}")
             
@@ -279,7 +275,7 @@ def limpiar_jobs_terminados():
     global background_jobs, job_id_counter
     jobs_a_eliminar = []
     
-    for job_id, job_info in list(background_jobs.items()): #copia temporal para evitar errores.
+    for job_id, job_info in list(background_jobs.items()): 
         todos_terminados = True 
         
         for proceso in job_info["process"]:
