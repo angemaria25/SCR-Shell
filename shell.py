@@ -1,5 +1,6 @@
 import os 
 import re
+import sys
 import shlex
 import subprocess
 from collections import OrderedDict
@@ -17,23 +18,33 @@ def split_con_comillas(comando):
     return shlex.split(comando)
 
 def main():
-    while True:
-        try:
-            comando = input("$ ")
-            comando = espacio_tokens(comando)
-            if comando == "exit":
+    if sys.stdin.isatty():
+        while True:
+            try:
+                comando = input("$ ")
+                comando = espacio_tokens(comando)
+                if comando == "exit":
+                    break
+                
+                tokens = split_con_comillas(comando)  
+                
+                if tokens:
+                    ejecutar_comando(tokens)
+            
+            except KeyboardInterrupt:
+                print("\nSaliendo del shell...")
                 break
-            
-            tokens = split_con_comillas(comando)  
-            
-            if tokens:
-                ejecutar_comando(tokens)
-        
-        except KeyboardInterrupt:
-            print("\nSaliendo del shell...")
-            break
-        except Exception as e:
-            print(f"Error: {e}")
+            except Exception as e:
+                print(f"Error: {e}", , file=sys.stderr)
+    else:
+        for line in sys.stdin:
+            comando = line.strip()
+            if comando:
+                comando = espacio_tokens(comando)
+                tokens = split_con_comillas(comando)
+                
+                if tokens:
+                    ejecutar_comando(tokens)
             
 def ejecutar_cd(partes):
     global ultimo_directorio
