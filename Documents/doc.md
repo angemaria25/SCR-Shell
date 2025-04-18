@@ -51,17 +51,11 @@ Este proyecto implementa un shell interactivo en Python que soporta:
 
 **`split_con_comillas(comando: str) -> List[str]`**
 
-- **Objetivo**: Divide una cadena de comando en tokens, respetando los espacios dentro de comillas simples `''` y dobles `""`, mientras separa correctamente los operadores y argumentos. 
+- **Objetivo**: Divide una cadena de comando en tokens, respetando los espacios dentro de comillas simples `''` y dobles `""`, mientras separa correctamente los operadores y argumentos. Esta función asegura que los argumentos entre comillas no se separen por espacios, lo cual es fundamental para preservar cadenas completas como un solo argumento.
 - **Parámetro**: 
     - `comando (str)`: Cadena de texto que representa el comando de entrada del usuario, ya normalizada por `espacio_tokens()` para tener los operadores separados por espacios (ej: `"echo 'hola mundo' > salida.txt"`)
 - **Proceso**: 
-    1. Utiliza el módulo `shlex` de Python, configurado con `posix=True` de manera predeterminada .
-    2. Llama a shlex.split(comando) para dividir la entrada en tokens:
-        - Combina palabras entre comillas como un solo token.
-        - Maneja correctamente los caracteres escapados.
-        - Elimina las comillas externas del resultado.
-    3. Devuelve como salida la lista de tokens.
-- **Retorna**: Lista de cadenas, cada una representando un token individual, con las comillas ya eliminadas por `shlex.split`.
+- **Retorna**: Lista de cadenas, cada una representando un token individual.
 - **Ejemplo1**:
   ```
   entrada = "echo 'Hola mundo' > archivo.txt"
