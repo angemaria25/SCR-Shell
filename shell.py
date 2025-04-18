@@ -35,7 +35,7 @@ def main():
                 print("\nSaliendo del shell...")
                 break
             except Exception as e:
-                print(f"Error: {e}", , file=sys.stderr)
+                print(f"Error: {e}", file=sys.stderr)
     else:
         for line in sys.stdin:
             comando = line.strip()
