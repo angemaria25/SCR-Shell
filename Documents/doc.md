@@ -10,8 +10,6 @@ Este proyecto implementa un shell interactivo en Python que soporta:
 - Ejecución en segundo plano `&`
 - Comandos internos `(cd, jobs, fg)`
 
-El shell sigue un diseño modular con componentes claramente separados para el parsing, ejecución y gestión de procesos.
-
 ## Arquitectura del Sistema
 
 ### Componentes Fundamentales
@@ -24,8 +22,8 @@ El shell sigue un diseño modular con componentes claramente separados para el p
 - **Proceso**: 
     1. Identificación de operadores:
         - Usa expresión regular para encontrar:
-            `>>`: redirección append
-            `>, <, |`: operadores simples
+            - `>>`: redirección append
+            - `>, <, |`: operadores simples
         - Añade espacios antes y después de cada operador encontrado.
     2. Normalización de espacios:
         - Divide la cadena en todos los espacios blancos.
@@ -36,26 +34,24 @@ El shell sigue un diseño modular con componentes claramente separados para el p
   ```
   entrada = "ls -l>out.txt"
   proceso: 
-  1. Detecta '>' → añade espacios
+  1. Detecta ">" → añade espacios
   "ls -l > out.txt"
   2. Normaliza espacios (ningún cambio)
   3. Retorna: "ls -l > out.txt"
-  salida = espacio_tokens(entrada)  # "ls -l > out.txt"
   ```
 - **Ejemplo2**:
   ```
   entrada = "cat file.txt|grep \"error\""
   proceso:
-  1. Detecta '|' → añade espacios
+  1. Detecta "|" → añade espacios
   "cat file.txt | grep "error""
   2. Normaliza espacios
   3. Retorna: "cat file.txt | grep "error""
-  salida = espacio_tokens(entrada)  # "cat file.txt | grep "error""
   ```
 
 **`split_con_comillas(comando: str) -> List[str]`**
 
-- **Objetivo**: Divide una cadena de comando en tokens, respetando los espacios dentro de comillas simples `'` y dobles `"`, mientras separa correctamente los operadores y argumentos. 
+- **Objetivo**: Divide una cadena de comando en tokens, respetando los espacios dentro de comillas simples `''` y dobles `""`, mientras separa correctamente los operadores y argumentos. 
 - **Parámetro**: 
     - `comando (str)`: Cadena de texto que representa el comando de entrada del usuario, ya normalizada por `espacio_tokens()` para tener los operadores separados por espacios (ej: `"echo 'hola mundo' > salida.txt"`)
 - **Proceso**: 
@@ -64,11 +60,11 @@ El shell sigue un diseño modular con componentes claramente separados para el p
         - Combina palabras entre comillas como un solo token.
         - Maneja correctamente los caracteres escapados.
         - Elimina las comillas externas del resultado.
-    3. Retorna la lista de tokens.
+    3. Devuelve como salida la lista de tokens.
 - **Retorna**: Lista de cadenas, cada una representando un token individual, con las comillas ya eliminadas por `shlex.split`.
 - **Ejemplo1**:
   ```
-  entrada = echo "Hola mundo" > archivo.txt
+  entrada = "echo 'Hola mundo' > archivo.txt"
   salida: ['echo', 'Hola mundo', '>', 'archivo.txt']
   ```
 - **Ejemplo2**:
@@ -90,18 +86,19 @@ El shell sigue un diseño modular con componentes claramente separados para el p
     - Llama a ejecutar_comando(linea).
 - **Flujo**:
 ```
-main
+main()
 └──> espacio_tokens
     └──> split_con_comillas
         └──> ejecutar_comando
+                ├──> Verifica que el comando no este vacío
                 ├──> ejecutar_cd (si el comando es "cd")
                 ├──> listar_jobs (si el comando es "jobs")
                 ├──> ejecutar_fg (si el comando es "fg")
+                ├──> Si el comando es para ejecutar en background elimina "&" para procesar correctamente
                 ├──> manejar_pipes (si contiene "|")
-                ├──> parsear_redirecciones (si contiene "<", ">", ">>")
+                ├──> parsear_redirecciones (si contiene "<", ">", ">>" o es un comando simple)
                 └──> ejecutar_comando_redirecciones (si contiene redirecciones o es un comando simple)
 ```
-
 - **Ejemplo**:
   ```
   entrada = echo "Prueba técnica" | grep "técnica" > resultado.txt &
@@ -126,7 +123,7 @@ main
         - Si el segundo token es `"-l"`, llama a `listar_jobs(mostrar_detalles=True)`.
         - En cualquier otro caso, llama a `listar_jobs()` sin argumentos.
     4. Si el comando es `"fg"`:
-        - Si hay un segundo token, lo pasa como argumento a `ejecutar_fg()` (representa el job id o %job_id).
+        - Si hay un segundo token, lo pasa como argumento a `ejecutar_fg()` (representa el `job_id` o `%job_id`).
         - Si no, llama a `ejecutar_fg(None)` para traer el último job en segundo plano al frente.
     5. Si el **último token** es `"&"`:
         - Se marca `is_background = True`.
@@ -141,31 +138,30 @@ main
             - `redireccion_entrada`: archivo de entrada si existe (None si no).
             - `append`: booleano indicando si es `>>` (append) o `>` (sobrescribe).
         - Luego se llama a `ejecutar_comando_redirecciones()` pasando esos elementos junto con `is_background`.
-- **Retorna**: No retorna explícitamente nada. Su propósito es controlar el flujo de ejecución de comandos dependiendo de su tipo y estructura.
 - **Ejemplo1**:
   ```
-  entrada = ["sort", "<", "nombres.txt", ">", "ordenados.txt"]
+  entrada = ['sort', '<', 'nombres.txt', '>', 'ordenados.txt']
   Proceso:
   1. Verifica si tokens esta vacío. ---- ❌ → Hay tokens → sigue.
   2. Verifica si es un comando interno como jobs, fg, cd. ---- ❌ → El primer token es "sort".
   3. Verifica si es en segundo plano (&). ---- ❌ → El último token no es "&". 
     - is_background = False
-  4. Verifica si contiene pipes (|). ---- ❌ →  porque "|" in comando_str es False.
+  4. Verifica si contiene pipes (|). ---- ❌ 
     - Entonces llama a :
         comando_base, redireccion_salida, redireccion_entrada, append = parsear_redirecciones(tokens)
-        - Y luego llama a ejecutar_comando_redirecciones() con el resultado de parsear_redirecciones().
+        - Y luego llama a ejecutar_comando_redirecciones() con el resultado de parsear_redirecciones() para ejecutar el comando.
   ```
 - **Ejemplo2**:
   ```
-  entrada = ["cat", "entrada.txt", "|", "grep", "error", ">", "salida.txt", "&"]
+  entrada = ['cat', 'entrada.txt', '|', 'grep', 'error', '>', 'salida.txt', '&']
   Proceso:
   1. Verifica si tokens esta vacío. ---- ❌ → Hay tokens → sigue.
   2. Verifica si es un comando interno como jobs, fg, cd. ---- ❌ → El primer token es "cat".
   3. Verifica si es en segundo plano (&). ---- ✅ → El último token es "&". 
     - Se elimina el "&":
-        tokens = ["cat", "entrada.txt", "|", "grep", "error", ">", "salida.txt"]
+        tokens = ['cat', 'entrada.txt', '|', 'grep', 'error', '>', 'salida.txt']
         is_background = True
-  4. Verifica si contiene pipes (|). ---- ✅ →  porque "|" in comando_str es True.
+  4. Verifica si contiene pipes (|). ---- ✅ →  "|" in comando_str es True.
     - Entonces llama a :
         manejar_pipes("cat entrada.txt | grep error > salida.txt", is_background=True)
   ```
@@ -216,10 +212,10 @@ main
     - Si es en background, imprime el job ID y PID del proceso final.
 - **Ejemplo**:
   ```
-  entrada = cat entrada.txt | grep "error" | sort > errores.txt
+  entrada = "cat entrada.txt | grep 'error' | sort > errores.txt"
   Proceso:
   1. Separación del comando por pipes.
-  2. Limpieza de comandos y creación de lista comandos → salida: ["cat entrada.txt", 'grep "error"', "sort > errores.txt"] 
+  2. Limpieza de comandos y creación de lista comandos → salida: ['cat entrada.txt', 'grep "error"', 'sort > errores.txt'] 
   3. Iteración 1: Primer comando - cat entrada.txt
         1. Se llama a parsear_redirecciones(['cat', 'entrada.txt'])
             - No hay redirecciones aquí.
@@ -253,12 +249,11 @@ main
    6. Se espera al último proceso con communicate(), pero no imprime nada porque hubo redirección a archivo.
   ```
 
-**`parsear_redirecciones(partes)`**
+**`parsear_redirecciones(tokens)`**
 
 - **Objetivo**: Extrae las redirecciones `<`, `>`, `>>` desde una lista de tokens.
 - **Parámetro**: 
-    - `partes`: Lista de tokens del comando, por (ej: ["cat", "archivo.txt", ">", "salida.txt"]).
-- **Proceso**: 
+    - `tokens`: Lista de tokens del comando, por (ej: ['cat', 'archivo.txt', '>', 'salida.txt']). 
 - **Retorna**: 
     - El comando limpio sin redirecciones.
     - El archivo de entrada (si hay `<`).
@@ -266,30 +261,30 @@ main
     - Un booleano append para saber si es `>>` (añadir) o `>` (sobrescribir).
 - **Ejemplo1**:
   ```
-  entrada = ["cat", "archivo.txt", ">", "salida.txt"]
+  entrada = ['cat', 'archivo.txt', '>', 'salida.txt']
   Proceso:
   1. i = 0 → "cat" → nada
   2. i = 1 → "archivo.txt" → nada
   3. i = 2 → ">" → detecta redirección de salida
   4. Guarda:
         redireccion_salida = "salida.txt"
-        comando_base = ["cat", "archivo.txt"]
+        comando_base = ['cat', 'archivo.txt']
         append = False
   ```
 - **Ejemplo2**:
   ```
-  entrada = ["grep", "error", "<", "entrada.txt"]
+  entrada = ['grep', 'error', '<', 'entrada.txt']
   Proceso:
   1. i = 0 → "grep" → nada
   2. i = 1 → "error" → nada
   3. i = 2 → "<" → detecta redirección de entrada
   4. Guarda:
         redireccion_entrada = "entrada.txt"
-        comando_base = ["grep", "error"]
+        comando_base = ['grep', 'error']
   ```
 - **Ejemplo3**:
   ```
-  entrada = ["sort", "archivo.txt", ">>", "ordenado.txt"]
+  entrada = ['sort', 'archivo.txt', '>>', 'ordenado.txt']
   Proceso:
   1. i = 0 → "sort" → nada
   2. i = 1 → "archivo.txt" → nada
@@ -297,7 +292,7 @@ main
   4. Guarda:
         redireccion_salida = "ordenado.txt"
         append = True
-        comando_base = ["sort", "archivo.txt"]
+        comando_base = ['sort', 'archivo.txt']
   ```
             
 **`ejecutar_comando_redirecciones(comando_base, redireccion_salida, redireccion_entrada, append, background=False)`**
@@ -306,29 +301,29 @@ main
     - Ejecuta un comando individual que ya fue preprocesado para detectar si tiene redirecciones o si se ejecuta en background.
     - Este comando ya no incluye los tokens `>`, `>>`, `<`, `&`, etc. Es decir, todo eso ya lo extrajo `parsear_redirecciones()` y lo pasó limpio a esta función.
 - **Parámetros**: 
-    - `comando_base	list[str]`:	Comando sin redirecciones (ej. [`"ls", "-l"`])
+    - `comando_base	list[str]`:	Comando sin redirecciones (ej. [`'ls', '-l'`])
     - `redireccion_salida (str o None)`: Nombre del archivo si se redirige salida (`>` o `>>`)
     - `redireccion_entrada (str o None)`: Nombre del archivo si se redirige entrada (`<`)
     - `append (bool)`: True si la salida se agrega (`>>`), False si sobrescribe (`>`)
     - `background (bool)`: True si el proceso debe ejecutarse en segundo plano
 - **Proceso**:
     1. Verifica si hay archivo de entrada (`redirección de entrada <`):
-        - Si lo hay, abre el archivo en modo lectura ("r") y lo asigna como stdin.
+        - Si lo hay, abre el archivo en modo lectura (`"r"`) y lo asigna como stdin.
         - Si ocurre un error al abrirlo (por ejemplo, no existe), se muestra un mensaje y se cancela la ejecución.
     2. Verifica si hay archivo de salida (`redireccion_salida: > o >>`):
         - Si lo hay, abre el archivo en modo:
-            - Si es `>`, lo abre en modo de sobreescritura ("w").
-            - Si es `>>`, lo abre en modo de agregar al final del archivo ("a").
+            - Si es `>`, lo abre en modo de sobreescritura (`"w"`).
+            - Si es `>>`, lo abre en modo de agregar al final del archivo (`"a"`).
         - Se usa como stdout.
         - Si ocurre un error al abrirlo, también se cancela la ejecución y se cierran recursos si es necesario.
     3. Lanza el proceso con `subprocess.Popen()`:
         - Si hay redirección de entrada, el archivo se pasa como stdin.
         - Si hay redirección de salida, el archivo se pasa como stdout.
         - Si no hay redirección de salida, captura stdout internamente para imprimirlo después.
-        - Se ejecuta `comando_base`, que es una lista de strings (ej: `["ls", "-l"]`).
+        - Se ejecuta `comando_base`, que es una lista de strings (ej: `['ls', '-l']`).
     4. Comprueba si se ejecuta en background (`&`):
         - Si el comando se debe ejecutar en segundo plano:
-            - Guarda el proceso en el diccionario de trabajos en segundo plano (background_jobs) con un ID único.
+            - Guarda el proceso en el diccionario de trabajos en segundo plano (`background_jobs`) con un `ID único`.
             - Muestra por pantalla el PID del proceso.
             - La función finaliza sin esperar a que el proceso termine.
     5. Si no es background (foreground):
@@ -341,25 +336,25 @@ main
 - **Ejemplo de Proceso Completo**:
   ```
   1. Input original del usuario: echo hola > saludo.txt &
-  2. Tokenización: → ["echo", "hola", ">", "saludo.txt", "&"]
-  3. Se detecta & → background = True  → Tokens quedan: ["echo", "hola", ">", "saludo.txt"]
+  2. Tokenización: → ['echo', 'hola', '>', 'saludo.txt', '&']
+  3. Se detecta & → background = True  → Tokens quedan: ['echo', 'hola', '>', 'saludo.txt']
   4. parsear_redirecciones() extrae:
-        - comando_base = ["echo", "hola"]
-        - redireccion_salida = "saludo.txt"
+        - comando_base = ['echo', 'hola']
+        - redireccion_salida = 'saludo.txt'
         - redireccion_entrada = None
         - append = False
   5. Se llama a:
             ejecutar_comando_redirecciones(
-                comando_base=["echo", "hola"],
-                redireccion_salida="saludo.txt",
+                comando_base=['echo', 'hola'],
+                redireccion_salida='saludo.txt',
                 redireccion_entrada=None,
                 append=False,
                 background=True)
   6. La función:
         - Abre "saludo.txt" en modo "w".
-        - Ejecuta echo hola redirigiendo la salida al archivo.
+        - Ejecuta "echo hola" redirigiendo la salida al archivo.
         - Guarda el proceso como job en background.
-        - Muestra: [1] 12345 (por ejemplo)
+        - Muestra: [1] 12345 
   ```
 
 
@@ -377,8 +372,10 @@ main
 ```
 background_jobs = {
     job_id: {
+        "pid": int,
         "command": str,
-        "process": list[subprocess.Popen]
+        "process": list[subprocess.Popen],
+        "ya_mostrado": bool
     },
     ...
 }

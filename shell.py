@@ -140,11 +140,11 @@ def manejar_pipes(comando, background=False):
     else:
         print(error or "", end="")
         
-def parsear_redirecciones(partes):
+def parsear_redirecciones(tokens):
     redireccion_salida = None
     redireccion_entrada = None
     append = False 
-    comando_base = partes.copy()
+    comando_base = tokens.copy()
     
     i = 0
     while i < len(comando_base):
